@@ -3,26 +3,22 @@ import openpyxl
 import logging
 # import pandas as pd
 import datetime as dt
-# from openpyxl.writer.excel import ExcelWriter
 
-DATE_NOW = '%d.%m.%Y'
-DATATIME_NOW = '%d.%m.%Y %H:%M:%S'
-PATH = "C:/Users/user/Desktop/Arenda_1.xlsx"
-""" Переменные проверки"""
-AMOUNT_R = 0  # кол-во обработанных строк в файле с арендаторами
-AMOUNT_A = 0  # кол-во обработанных арендаторов в файле с арендаторами
-AMOUNT_R_TOTAL = 28  # кол-во строк в файле с арендаторами
-AMOUNT_A_TOTAL = 24  # кол-во строк с арендаторами в файле с арендаторами
+from openpyxl.styles import PatternFill
+from openpyxl.styles.differential import DifferentialStyle
+from openpyxl.formatting.rule import Rule
+from openpyxl.styles import NamedStyle, Alignment, Font, Border, Side
+from src.configs import configure_logging
+from src.constants import AMOUNT_RAW, AMOUNT_A, AMOUNT_RAW_TOTAL, AMOUNT_A_TOTAL, PATH_A, PATH_D, DT_FORMAT
 
-logging.basicConfig(level=logging.INFO, filename="parsing_excel_log.txt",filemode="w")
-# logging.basicConfig(level=logging.INFO, filename="/src/logs/parsing_excel_log.log",filemode="w")
+configure_logging()
 now = dt.datetime.now()
 
 try:
-    book_arenda = openpyxl.load_workbook(filename=PATH)
-    book_debet = openpyxl.load_workbook(filename="C:/Users/user/Desktop/debet_30.11.2023.xlsx")
+    book_arenda = openpyxl.load_workbook(filename=PATH_A)
+    book_debet = openpyxl.load_workbook(filename=PATH_D)
 except:
-    logging.ERROR(f"___{now.strftime(DATATIME_NOW)}___Something went wrong when open and reed files")
+    logging.ERROR(f"___{now.strftime(DT_FORMAT)}___Something went wrong when open and reed files")
     raise
 
 sheet_arenda = book_arenda.worksheets[-1]
@@ -37,7 +33,7 @@ try:
     for i in reversed(column_list):
         sheet_debet.delete_cols(i)
 except:
-    logging.ERROR(f"___{now.strftime(DATATIME_NOW)}___Something went wrong when delete columns")
+    logging.ERROR(f"___{now.strftime(DT_FORMAT)}___Something went wrong when delete columns")
     raise
 
 
@@ -60,9 +56,17 @@ def find_debet(cell):
                 if pattern and (cell_debet_downcell.value.strip() == cell_downlow.value):
                     debet_amount = cell_debet_downcell.offset(column=1)
                     credit_amount = cell_debet_downcell.offset(column=2)
-                    logging.info(f"___{now.strftime(DATATIME_NOW)}___{cell_debet[0].value}-----{cell[0].value} /// {cell_debet_downcell.value}-----{cell_downlow.value}-----{debet_amount.value}-----{credit_amount.value}\n")
-                    new_sheet.cell(cell[2].row, cell[2].column, value=debet_amount.value)
-                    new_sheet.cell(cell[3].row, cell[3].column, value=credit_amount.value)
+                    logging.info(f"___{now.strftime(DT_FORMAT)}___{cell_debet[0].value}-----{cell[0].value} /// {cell_debet_downcell.value}-----{cell_downlow.value}-----{debet_amount.value}-----{credit_amount.value}\n")
+                    if not debet_amount.value:
+                        style_bad = "Normal"
+                    else:
+                        style_bad = "Bad"
+                    if credit_amount.value:
+                        style_good = "Good"
+                    else:
+                        style_good = "Normal"
+                    new_sheet.cell(cell[2].row, cell[2].column, value=debet_amount.value).style = style_bad
+                    new_sheet.cell(cell[3].row, cell[3].column, value=credit_amount.value).style = style_good
                     AMOUNT_A = AMOUNT_A + 1
             except:
                 raise
@@ -70,13 +74,44 @@ def find_debet(cell):
 source = book_arenda.worksheets[-1]
 new_sheet = book_arenda.copy_worksheet(source)
 
+# if not 'style_normal' in book_arenda.named_styles:
+#     style_normal = NamedStyle(name="style_normal")
+#     style_normal.font = Font(name='Times New Roman', bold=True, size=11, color="00000000")
+#     style_normal.alignment = Alignment(horizontal='center', vertical='center')
+#     style_normal.fill = PatternFill(fgColor="00FFFFFF")
+#     bd = Side(style='thin', color="00000000")
+#     style_normal.border = Border(left=bd, top=bd, right=bd, bottom=bd)
+# else:
+#     book_arenda.named_styles(name="style_normal")
+
+
+# book_arenda.add_named_style(style_normal)
+
+# for index,cur_style in enumerate(book_arenda._named_styles):
+#     if cur_style.name == 'my_new_style':
+#         book_arenda._named_styles[index] = style_normal
+#         style_normal.bind(book_arenda)
+#         break
+# else:
+#     book_arenda.add_named_style(style_normal)
+
+
 for cell in sheet_arenda.iter_rows(min_row=1, max_row=50, min_col=1, max_col=5):
     if cell[0].value == None:
         continue
     find_debet(cell)
-    AMOUNT_R = AMOUNT_R + 1
+    AMOUNT_RAW = AMOUNT_RAW + 1
 
-book_arenda.save(PATH)
+# bg_red = PatternFill(fill_type='solid', fgColor="FF0000")
+# diff_style = DifferentialStyle(fill=bg_red)
+# rule = Rule(type="expression", dxf=diff_style)
+# rule.formula = ["$B3>0"]
+# new_sheet.conditional_formatting.add("C3:C100", rule)
+
+# if 'style_normal' in book_arenda.named_styles:
+#     del book_arenda.named_styles.del  = style_normal
+
+book_arenda.save(PATH_A)
 
 # title = f"{now.strftime(DATE_NOW)}_auto"
 # book_arenda.create_sheet(title)
@@ -88,8 +123,8 @@ book_arenda.save(PATH)
 # sheet.title = title
 # book_arenda.save(PATH)
 
-if AMOUNT_R < 28 or AMOUNT_A < 24: 
+if AMOUNT_RAW < AMOUNT_RAW_TOTAL or AMOUNT_A < AMOUNT_A_TOTAL: 
     color = 31
 else:
     color = 32
-print (f"\033[1;{color};40m ========== {AMOUNT_R} строк обработано из 28 расчетных в файле аренда ========== {AMOUNT_A} строк в выводе из 24 расчетных (арендаторы в файле аренда) ========== \033[0;0m")
+print (f"\033[1;{color};40m ========== {AMOUNT_RAW} строк обработано из 28 расчетных в файле аренда ========== {AMOUNT_A} строк в выводе из 24 расчетных (арендаторы в файле аренда) ========== \033[0;0m")
