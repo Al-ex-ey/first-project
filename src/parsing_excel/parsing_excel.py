@@ -55,7 +55,7 @@ except:
     raise
 
 
-def find_debit(arendator, i):
+def find_debit(arendator: str, i: int):
     global AMOUNT_A
     for d in sheet_debet.iter_rows(min_row=10, max_row=DEBIT_AMOUNT_ROW, min_col=1, max_col=3):
         debit_arendator_cell = d[0]
@@ -149,7 +149,7 @@ def parsing_excel():
             arendator = pattern.findall(arendator_cell.value)[0]
         else:
             arendator = pattern.findall(arendator_cell.value)[0] + " " + pattern.findall(arendator_cell.value)[1]
-        find_debit(arendator, i)
+        find_debit(arendator: str, i: int)
 
 
 if __name__ == '__main__':
