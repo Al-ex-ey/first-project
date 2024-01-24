@@ -9,7 +9,7 @@ from openpyxl.styles.differential import DifferentialStyle
 from openpyxl.formatting.rule import Rule
 from openpyxl.styles import NamedStyle, Alignment, Font, Border, Side
 from configs import configure_logging
-from constants import AMOUNT_RAW, AMOUNT_A, AMOUNT_RAW_TOTAL, AMOUNT_A_TOTAL, PATH_A, PATH_D, ARENDA_AMOUNT_ROW, DEBIT_AMOUNT_ROW, DT_FORMAT
+from constants import AMOUNT_ROW, AMOUNT_A, AMOUNT_ROW_TOTAL, AMOUNT_A_TOTAL, PATH_A, PATH_D, ARENDA_AMOUNT_ROW, DEBIT_AMOUNT_ROW, DT_FORMAT
 from tqdm import tqdm
 
 configure_logging()
@@ -30,6 +30,7 @@ lost_contracts = []
 arendators_not_in_debet_list = []
 arendator_debet_list = []
 arendator_list = []
+arendator_pattern_list = []
 
 # data = sheet_arenda.values
 # df = pd.DataFrame(data)
@@ -55,14 +56,65 @@ except:
     raise
 
 
-def find_debit(arendator: str, i: int):
+def parsing_excel():
+    global AMOUNT_ROW, AMOUNT_ROW_TOTAL
+    for a in range(1, ARENDA_AMOUNT_ROW):
+        arendator_cell = sheet_arenda.cell(row=a, column=1)
+        if arendator_cell.value == "КОНТАКТЫ":
+            break
+        AMOUNT_ROW_TOTAL = AMOUNT_ROW_TOTAL + 1
+        if (arendator_cell.value == None) or (arendator_cell.font.bold == True) or (arendator_cell.value in arendator_list):
+            continue
+        arendator_list.append(arendator_cell.value)
+
+        # logging.info(f"{arendator_cell.value}")
+
+    for d in range(1, DEBIT_AMOUNT_ROW):
+        debit_arendator_cell = sheet_debet.cell(row=d, column=1)
+        if arendator_cell.value == "Итого":
+            break
+        if (debit_arendator_cell.value == None) or (debit_arendator_cell.alignment.indent > 0) or (debit_arendator_cell.value in arendator_debet_list):
+            continue
+        arendator_debet_list.append(debit_arendator_cell.value)
+        # logging.info(f"{debit_arendator_cell.value}")
+
+    for a in arendator_list:
+        for d in arendator_debet_list:
+            if a == d:
+                continue
+            if a not in arendator_debet_list and a not in arendators_not_in_debet_list:
+                arendators_not_in_debet_list.append(a)
+
+    pattern = re.compile(r'\w+[\-|\.]?\w+')
+    for i in tqdm(range(1, AMOUNT_ROW_TOTAL), desc="Wait a going process"):
+        arendator_cell = sheet_arenda.cell(row=i, column=1)
+        if arendator_cell.value == "КОНТАКТЫ":
+            break
+        if arendator_cell.value == None or arendator_cell.font.bold == True:
+            continue
+        AMOUNT_ROW = AMOUNT_ROW + 1
+        arendator_pattern = pattern.findall(arendator_cell.value)
+        if len(arendator_pattern) < 2:
+            arendator = pattern.findall(arendator_cell.value)[0]
+        else:
+            arendator = pattern.findall(arendator_cell.value)[0] + " " + pattern.findall(arendator_cell.value)[1]
+        # arendator_pattern_list.append(arendator)
+        find_debit(arendator, i)
+
+
+def find_debit(arendator, i):
     global AMOUNT_A
     for d in sheet_debet.iter_rows(min_row=10, max_row=DEBIT_AMOUNT_ROW, min_col=1, max_col=3):
-        debit_arendator_cell = d[0]
-        if (debit_arendator_cell.value == None) or (debit_arendator_cell.alignment.indent > 0):
+        debet_arendator_cell = d[0]
+        if (debet_arendator_cell.value == None) or (debet_arendator_cell.alignment.indent > 0):
             continue
 
-        comparison = re.search(arendator.lower(), debit_arendator_cell.value.lower())
+        # if debet_arendator_cell.value == "Итого":
+        #     arendators_not_in_debet_list.append(arendator)
+        #     break
+         
+        pattern = re.compile(r'[\"|\(|\)]')
+        comparison = re.search(re.sub(pattern, '', arendator), re.sub(pattern, '', debet_arendator_cell.value))
 
         cell_arenda_contract = sheet_arenda.cell(row=i, column=2)
         if cell_arenda_contract.value == None:
@@ -70,8 +122,8 @@ def find_debit(arendator: str, i: int):
                 lost_contracts.append(arendator)
             continue
 
-        for contract in range(1, 20):
-            cell_debet_contract = debit_arendator_cell.offset(row=contract)
+        for contract in range(1, 20): 
+            cell_debet_contract = debet_arendator_cell.offset(row=contract)
             try:
                 if comparison and (cell_arenda_contract.value == cell_debet_contract.value):
                     debet_amount = cell_debet_contract.offset(column=1)
@@ -97,73 +149,23 @@ def find_debit(arendator: str, i: int):
                     new_sheet.cell(i, column=4).alignment = Alignment(horizontal="center", vertical="center")
                     new_sheet.cell(i, column=4).border = Border(left=bd, top=bd, right=bd, bottom=bd)
                     AMOUNT_A = AMOUNT_A + 1
+                    break
             except:
                 raise
-
-
-def parsing_excel():
-    global AMOUNT_RAW
-    for a in range(1, ARENDA_AMOUNT_ROW):
-        arendator_cell = sheet_arenda.cell(row=a, column=1)
-        if (arendator_cell.value == None) or (arendator_cell.font.bold == True) or (arendator_cell.value in arendator_list):
-            continue
-        arendator_list.append(arendator_cell.value)
-        # logging.info(f"{arendator_cell.value}")
-
-    for d in range(1, DEBIT_AMOUNT_ROW):
-        debit_arendator_cell = sheet_debet.cell(row=d, column=1)
-        if (debit_arendator_cell.value == None) or (debit_arendator_cell.alignment.indent > 0) or (debit_arendator_cell.value in arendator_debet_list):
-            continue
-        arendator_debet_list.append(debit_arendator_cell.value)
-        # logging.info(f"{debit_arendator_cell.value}")
-
-    # pattern = re.compile(r'\S+')
-    # for i in arendator_list:
-    #     # i = str(i)
-    #     # print(i)
-    #     arendator = pattern.findall(i)
-    #     print(arendator)
-    #     print(len(arendator))
-    #     if len(arendator) < 2:
-    #         arendator = pattern.findall(arendator[0])
-    #         print(arendator)
-    #     else:
-    #         arendator = pattern.findall(arendator)[:1]
-    #         print(arendator)
-    #     for p in arendator_debet_list:
-    #         # print(p)
-    #         comparison = re.search(str(arendator).lower(), p.lower())
-    #         if not comparison:
-    #             arendators_not_in_debet_list.append(i)
-
-    pattern = re.compile(r'\S+')
-    for i in tqdm(range(1, 230), desc="Wait a going process"):
-        arendator_cell = sheet_arenda.cell(row=i, column=1)
-        if arendator_cell.value == None:
-            continue
-        AMOUNT_RAW = AMOUNT_RAW + 1
-        if arendator_cell.font.bold == True:
-            continue
-        arendator_pattern = pattern.findall(arendator_cell.value)
-        if len(arendator_pattern) < 2:
-            arendator = pattern.findall(arendator_cell.value)[0]
-        else:
-            arendator = pattern.findall(arendator_cell.value)[0] + " " + pattern.findall(arendator_cell.value)[1]
-        find_debit(arendator: str, i: int)
 
 
 if __name__ == '__main__':
     parsing_excel()
     book_arenda.save(PATH_A)
 
-    if AMOUNT_RAW != AMOUNT_RAW_TOTAL or AMOUNT_A != AMOUNT_A_TOTAL:
+    if AMOUNT_ROW != AMOUNT_A_TOTAL or AMOUNT_A != AMOUNT_A_TOTAL:
         color = 31
     else:
         color = 32
-    print(f"\033[1;{color};40m ========== {AMOUNT_RAW} строк обработано из {AMOUNT_RAW_TOTAL} расчетных в файле аренда ========== {AMOUNT_A} строк в выводе из {AMOUNT_A_TOTAL} расчетных (арендаторы в файле аренда) ========== \033[0;0m\n")
+    print(f"\033[1;{color};40m ========== {AMOUNT_ROW} строк обработано из {AMOUNT_A_TOTAL} расчетных в файле аренда ========== {AMOUNT_A} строк в выводе из {AMOUNT_A_TOTAL} расчетных (арендаторы в файле аренда) ========== \033[0;0m\n")
     print(f"Аредаторы без договоров____{lost_contracts}\n")
-    print(f"=========================================================================================================================")
-    print(f"Аредатор отсутствует в дебиторке - {arendators_not_in_debet_list}\n")
+    print(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
+    # print(f"{arendator_pattern_list}")
 
 
 
