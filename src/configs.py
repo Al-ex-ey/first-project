@@ -1,5 +1,5 @@
 import logging
-from constants import BASE_DIR, LOG_FORMAT, DT_FORMAT
+from src.constants import BASE_DIR, LOG_FORMAT, DT_FORMAT
 
 
 def configure_logging():

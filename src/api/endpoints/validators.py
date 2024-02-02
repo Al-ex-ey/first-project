@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+import re
 
 
 def load_validate(files: list):
@@ -18,3 +19,7 @@ def load_validate(files: list):
             status_code=403,
             detail="File upload failed: file size is very big!"
         )
+
+
+# def filename_validate(file):
+#     pattern = re.compile(r'\w+[\-|\.]?\w+')
