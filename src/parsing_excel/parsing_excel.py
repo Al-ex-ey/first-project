@@ -134,15 +134,15 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
         if arendator_cell.value == None or arendator_cell.font.bold == True:
             continue
         AMOUNT_ROW = AMOUNT_ROW + 1
-        arendator_value = arendator_cell.value
-        arendator_pattern = pattern.findall(arendator_value)
-        # print(f"============================== arendator_value ===== {arendator_value} ==================\n")
-        if len(arendator_pattern) < 2:
-            print(f"============================== arendator_value ===== {arendator_value} ==================\n")
-            arendator = pattern.findall(arendator_value)[0]
-        else:
-            print(f"============================== arendator_value ===== {arendator_value} ==================\n")
-            arendator = pattern.findall(arendator_value)[0] + " " + pattern.findall(arendator_value)[1]
+        arendator = arendator_cell.value
+        # arendator_pattern = pattern.findall(arendator_value)
+        # # print(f"============================== arendator_value ===== {arendator_value} ==================\n")
+        # if len(arendator_pattern) < 2:
+        #     # print(f"============================== arendator_value ===== {arendator_value} ==================\n")
+        #     arendator = pattern.findall(arendator_value)[0]
+        # else:
+        #     # print(f"============================== arendator_value ===== {arendator_value} ==================\n")
+        #     arendator = pattern.findall(arendator_value)[0] + " " + pattern.findall(arendator_value)[1]
         for d in sheet_debet.iter_rows(min_row=10, max_row=DEBIT_AMOUNT_ROW, min_col=1, max_col=3):
             debet_arendator_cell = d[0]
             arendator_d = debet_arendator_cell.value
