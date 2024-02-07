@@ -4,6 +4,8 @@ import openpyxl
 import logging
 # import pandas as pd
 import datetime as dt
+import requests
+import shutil
 
 # from openpyxl.styles import PatternFill
 # from openpyxl.styles.differential import DifferentialStyle
@@ -22,6 +24,8 @@ from src.constants import (
 )
 from pathlib import Path
 from tqdm import tqdm
+from tkinter import *
+from tkinter import filedialog
 
 configure_logging()
 
@@ -31,7 +35,6 @@ configure_logging()
 
 
 def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA_AMOUNT_ROW, DEBIT_AMOUNT_ROW):
-    # global AMOUNT_ROW, AMOUNT_ROW_TOTAL
     now = dt.datetime.now()
 
     try:
@@ -193,6 +196,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
                     raise
 
     book_arenda.save(arenda_dir)
+    AMOUNT_A = AMOUNT_A + len(arendators_not_in_debet_list)
     if AMOUNT_ROW != AMOUNT_A_TOTAL or AMOUNT_A != AMOUNT_A_TOTAL:
         color = 31
     else:
@@ -201,6 +205,16 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     print(f"Аредаторы без договоров____{lost_contracts}\n")
     print(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
     print(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
+
+    # response = requests.get(arenda_dir)
+    # with open("Arenda_2024.xlsx", "wb") as file:
+    #     file.write(response.content)
+
+    filepath = filedialog.asksaveasfilename(defaultextension="xlsx", initialfile="Arenda_2024.xlsx")
+    if filepath != "":
+        with open(arenda_dir,"wb+") as file_to_r, open(filepath, "wb+") as file_to_w:
+            shutil.copyfileobj(file_to_r, file_to_w)
+
 
 
 

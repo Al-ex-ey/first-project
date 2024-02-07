@@ -24,7 +24,6 @@ from src.constants import (
     DEBIT_AMOUNT_ROW,
     DT_FORMAT
 )
-from tqdm import tqdm
 
 
 configure_logging()
@@ -43,12 +42,15 @@ def upload_files(files: list[UploadFile]):
     load_validate(files)
     result = []
     for file in files:
+        # absolute_path = os.path.realpath(file)
+        # print(f"==================================={absolute_path}=========================================================================")
         downloads_dir = BASE_DIR/"downloads"
         downloads_dir.mkdir(exist_ok=True)
         with open(downloads_dir/file.filename,"wb+") as buffer:
             shutil.copyfileobj(file.file, buffer)
         result.append(file)
     parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA_AMOUNT_ROW, DEBIT_AMOUNT_ROW)
+
     return result
 
 
