@@ -4,7 +4,7 @@ import openpyxl
 import logging
 # import pandas as pd
 import datetime as dt
-import requests
+# import requests
 import shutil
 
 # from openpyxl.styles import PatternFill
@@ -72,6 +72,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
         book_debet = openpyxl.load_workbook(filename=debet_dir)
     except:
         logging.ERROR(f"___{now.strftime(DT_FORMAT)}___Something went wrong when open and reed files")
+        # TypeError: 'int' object is not callable
         raise
 
     sheet_arenda = book_arenda.worksheets[-1]
@@ -128,7 +129,6 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
                 arendators_not_in_debet_list.append(a)
 
     pattern = re.compile(r'\w+[\-|\.]?\w+')
-    # pattern2 = re.compile(r'[\"|\(|\)]')
 
     for i in tqdm(range(1, AMOUNT_ROW_TOTAL), desc="Wait a going process"):
         arendator_cell = sheet_arenda.cell(row=i, column=1)
@@ -197,28 +197,15 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
 
     book_arenda.save(arenda_dir)
     AMOUNT_A = AMOUNT_A + len(arendators_not_in_debet_list)
-    if AMOUNT_ROW != AMOUNT_A_TOTAL or AMOUNT_A != AMOUNT_A_TOTAL:
+    if AMOUNT_ROW != AMOUNT_A:
         color = 31
     else:
         color = 32
-    print(f"\033[1;{color};40m ========== {AMOUNT_ROW} строк обработано из {AMOUNT_A_TOTAL} расчетных в файле аренда ========== {AMOUNT_A} строк в выводе из {AMOUNT_A_TOTAL} расчетных (арендаторы в файле аренда) ========== \033[0;0m\n")
+    print(f"\033[1;{color};40m ========== {AMOUNT_A} строк в выводе из {AMOUNT_ROW} (арендаторы в файле аренда) ========== \033[0;0m\n")
     print(f"Аредаторы без договоров____{lost_contracts}\n")
     print(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
     print(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
 
-    # response = requests.get(arenda_dir)
-    # with open("Arenda_2024.xlsx", "wb") as file:
-    #     file.write(response.content)
-
-    filepath = filedialog.asksaveasfilename(defaultextension="xlsx", initialfile="Arenda_2024.xlsx")
-    if filepath != "":
-        with open(arenda_dir,"wb+") as file_to_r, open(filepath, "wb+") as file_to_w:
-            shutil.copyfileobj(file_to_r, file_to_w)
-
-
-
-
-# def find_debit(arendator, i, sheet_debet, sheet_arenda, lost_contracts, AMOUNT_A, book_arenda):
 
 
 
