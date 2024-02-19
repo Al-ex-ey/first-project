@@ -4,7 +4,6 @@ import openpyxl
 import logging
 # import pandas as pd
 import datetime as dt
-# import requests
 import shutil
 
 # from openpyxl.styles import PatternFill
@@ -24,8 +23,7 @@ from src.constants import (
 )
 from pathlib import Path
 from tqdm import tqdm
-from tkinter import *
-from tkinter import filedialog
+
 
 configure_logging()
 
@@ -45,19 +43,15 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
         for file in files_dir:
             if  re.search(pattern, file):
                 files_list.append(file)
-        # print(f"========== files_dir ========{files_dir}========== files_list ========{files_list}=========={downloads_dir}\n")
         if len(files_list) > 0:
             files = [os.path.join(downloads_dir, file) for file in files_list]
             files = [file for file in files if os.path.isfile(file)]
             file_path = max(files, key=os.path.getctime)
             file_name = file_path.split('\\')[-1]
             check_pattern = re.search(pattern, file_name)
-            # print(f"============= file_path ======{file_path}============= file_name ======{file_name}======= check_pattern ====={check_pattern}\n")
             if check_pattern:
                 arenda_dir = downloads_dir/"Arenda_2024.xlsx"
                 debet_dir = file_path
-                # print(f"============================= arenda_dir =========={arenda_dir}=========================\n")
-                # print(f"============================ debet_dir ==========={debet_dir}===========================\n")
             else:
                 logging.ERROR(f"___{now.strftime(DT_FORMAT)}___There are no necessary files in the directory")
                 raise
@@ -66,9 +60,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
         raise
     
     try:
-        # print(f"================================arenda_dir======={arenda_dir}=================================\n")
         book_arenda = openpyxl.load_workbook(filename=arenda_dir)
-        # print(f"===============================debet_dir========{debet_dir}====file_path==={file_path}==========================\n")
         book_debet = openpyxl.load_workbook(filename=debet_dir)
     except:
         logging.ERROR(f"___{now.strftime(DT_FORMAT)}___Something went wrong when open and reed files")
@@ -138,14 +130,6 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
             continue
         AMOUNT_ROW = AMOUNT_ROW + 1
         arendator = arendator_cell.value
-        # arendator_pattern = pattern.findall(arendator_value)
-        # # print(f"============================== arendator_value ===== {arendator_value} ==================\n")
-        # if len(arendator_pattern) < 2:
-        #     # print(f"============================== arendator_value ===== {arendator_value} ==================\n")
-        #     arendator = pattern.findall(arendator_value)[0]
-        # else:
-        #     # print(f"============================== arendator_value ===== {arendator_value} ==================\n")
-        #     arendator = pattern.findall(arendator_value)[0] + " " + pattern.findall(arendator_value)[1]
         for d in sheet_debet.iter_rows(min_row=10, max_row=DEBIT_AMOUNT_ROW, min_col=1, max_col=3):
             debet_arendator_cell = d[0]
             arendator_d = debet_arendator_cell.value
@@ -153,9 +137,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
                 continue
     
             pattern = re.compile(r'[\"|\(|\)]')
-            # print(f"========= arendator ===== {arendator} ============ debet_arendator_cell.value ===== {arendator_d} ==={type(arendator_d)}===\n")
             comparison = re.search(re.sub(pattern, '', arendator.lower()), re.sub(pattern, '', arendator_d.lower()))
-            # comparison = re.search(arendator.lower(), arendator_d.lower())
 
             cell_arenda_contract = sheet_arenda.cell(row=i, column=2)
             if cell_arenda_contract.value == None:
@@ -167,7 +149,6 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
                 cell_debet_contract = debet_arendator_cell.offset(row=contract)
                 try:
                     if comparison and (cell_arenda_contract.value == cell_debet_contract.value):
-                        # print(f"===== cell_arenda_contract.value ===== {cell_arenda_contract.value} ========= cell_debet_contract.value ===== {cell_debet_contract.value} =====\n")
                         debet_amount = cell_debet_contract.offset(column=1)
                         credit_amount = cell_debet_contract.offset(column=2)
                         logging.info(f"___ {arendator} ----- {cell_arenda_contract.value} ----- {debet_amount.value} ----- {credit_amount.value}\n")
@@ -205,24 +186,12 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     print(f"Аредаторы без договоров____{lost_contracts}\n")
     print(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
     print(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
+    logging.info(f"\033[1;{color};40m ========== {AMOUNT_A} строк в выводе из {AMOUNT_ROW} (арендаторы в файле аренда) ========== \033[0;0m\n")
+    logging.info(f"Аредаторы без договоров____{lost_contracts}\n")
+    logging.info(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
+    logging.info(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
 
 
-
-
-
-# if __name__ == '__main__':
-    # parsing_excel()
-# def save_excel(book_arenda, PATH_A, lost_contracts, arendators_not_in_debet_list):
-#     book_arenda.save(PATH_A)
-
-#     if AMOUNT_ROW != AMOUNT_A_TOTAL or AMOUNT_A != AMOUNT_A_TOTAL:
-#         color = 31
-#     else:
-#         color = 32
-#     print(f"\033[1;{color};40m ========== {AMOUNT_ROW} строк обработано из {AMOUNT_A_TOTAL} расчетных в файле аренда ========== {AMOUNT_A} строк в выводе из {AMOUNT_A_TOTAL} расчетных (арендаторы в файле аренда) ========== \033[0;0m\n")
-#     print(f"Аредаторы без договоров____{lost_contracts}\n")
-#     print(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
-    # print(f"{arendator_pattern_list}")
 
 
 

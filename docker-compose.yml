@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+
+  app:
+    image: mh_project:latest
+    build: .
+    restart: always
+    ports:
+     - "8000:8000"
