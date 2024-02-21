@@ -1,13 +1,14 @@
-from fastapi import APIRouter, FastAPI, Request, UploadFile, File, Form
+from fastapi import APIRouter, FastAPI, Request, UploadFile, HTTPException, File, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 # from typing import List
 from .validators import load_validate
 import shutil
+import datetime as dt
 from src.parsing_excel.parsing_excel import parsing_excel 
 # from typing import Annotated
-# import os
+import os
 # import re
 # import openpyxl
 # import logging
@@ -32,17 +33,17 @@ router = APIRouter()
 
 app = FastAPI()
 
-# staticfiles = StaticFiles(directory="src/front/static")
-# app.mount("/static", StaticFiles(directory="src/front/static"), name="static")
+# staticfiles = StaticFiles(directory="src/frontend/static")
+# app.mount("/static", StaticFiles(directory="src/frontend/static"), name="static")
 templates = Jinja2Templates(directory="src/frontend/templates")
 
 
 @router.get('/', response_class=HTMLResponse)
-async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def upload_load_files(request: Request):
+    return templates.TemplateResponse("upload_load_files.html", {"request": request})
 
 
-@router.post('/upload')
+@router.post('/upload_files')
 def upload_files(files: list[UploadFile]):
     load_validate(files)
     result = []
@@ -54,5 +55,14 @@ def upload_files(files: list[UploadFile]):
         result.append(file)
     parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA_AMOUNT_ROW, DEBIT_AMOUNT_ROW)
     path = f"{BASE_DIR}/downloads/Arenda_2024.xlsx"
-    return FileResponse(path) 
-    # return result
+    return FileResponse(path, media_type = "xlsx", filename="Arenda_2024.xlsx")
+
+
+@router.get('/load_file')
+def load_file():
+    path = BASE_DIR/"downloads"
+    files_dir = os.listdir(path)
+    if "Arenda_2024.xlsx" in files_dir:
+       return FileResponse(f"{path}/Arenda_2024.xlsx", media_type = "xlsx", filename="Arenda_2024.xlsx")
+    else:
+        raise HTTPException(status_code=404, detail="File not found")

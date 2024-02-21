@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,9 +9,14 @@
 
   {% block content %}
   <h2>Upload Files</h2>
-  <form action = "/load_files/upload" enctype = "multipart/form-data"  method="post">
+  <form action = "/files/upload_files/" enctype = "multipart/form-data"  method="post">
       <input name = "files" type = "file" multiple>
       <input name = "files" type = "file" multiple>
+      <input type = "submit">
+  </form>
+
+  <h2>Load File</h2>
+  <form action = "/files/load_file" enctype = "multipart/form-data"  method="get">
       <input type = "submit">
   </form>
   {% endblock content %}
