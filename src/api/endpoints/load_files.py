@@ -1,6 +1,6 @@
 from fastapi import APIRouter, FastAPI, Request, UploadFile, HTTPException, File, Form
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
+# from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 # from typing import List
 from .validators import load_validate
