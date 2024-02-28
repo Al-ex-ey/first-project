@@ -12,9 +12,8 @@ import os
 # import re
 # import openpyxl
 # import logging
-# import datetime as dt
 # from openpyxl.styles import NamedStyle, Alignment, Font, Border, Side
-from src.configs import configure_logging
+from src.configs import *
 from src.constants import (
     AMOUNT_ROW,
     AMOUNT_A,
@@ -35,7 +34,7 @@ app = FastAPI()
 
 # staticfiles = StaticFiles(directory="src/frontend/static")
 # app.mount("/static", StaticFiles(directory="src/frontend/static"), name="static")
-templates = Jinja2Templates(directory="src/frontend/templates")
+# templates = Jinja2Templates(directory="src/templates")
 
 
 @router.get('/', response_class=HTMLResponse)

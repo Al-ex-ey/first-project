@@ -1,5 +1,6 @@
 import logging
 from src.constants import BASE_DIR, LOG_FORMAT, DT_FORMAT
+from fastapi.templating import Jinja2Templates
 
 
 def configure_logging():
@@ -13,3 +14,6 @@ def configure_logging():
         level=logging.INFO,
         handlers=(logging.FileHandler(log_file, encoding='utf-8', mode="w"),)
     )
+
+
+templates = Jinja2Templates(directory="src/templates")

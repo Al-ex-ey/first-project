@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load documents</title>
+    <!-- Подключаем CSS Materialize CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+</head>
+
+<body class="grey lighten-4">
+  <div class="container mt-5">
+      <!-- Верхний блок с заголовком -->
+      <h3 class="center-align">Загрузите файлы</h3>
+
+      <!-- Первый блок div с полем для ввода и кнопкой "Отправить" -->
+      <div class="row">
+          <div class="col s12 m8 offset-m2">
+              <div class="card">
+                  <div class="card-content">
+                      <span class="card-title">Выберите файлы</span>
+                      <form action = "/files/upload_files/" enctype = "multipart/form-data"  method="post">
+                          <div class="input-field">
+                            <input name = "files" type = "file" multiple>
+                              <!-- <label>Выберите файл</label> -->
+                          </div>
+                          <div class="input-field">
+                            <input name = "files" type = "file" multiple>
+                              <!-- <label>Выберите файл</label> -->
+                          </div>
+                          <div class="card-action">
+                              <button class="btn waves-effect waves-light" input type="submit">Отправить</button>
+                          </div>
+                      </form>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+      <!-- Второй блок div с полем для ввода
+      <div class="row">
+          <div class="col s12 m8 offset-m2">
+              <div class="card">
+                  <div class="card-content">
+                      <span class="card-title">Введите ID записки и секретную фразу</span>
+                      <form action = "/files/upload_files/" enctype = "multipart/form-data"  method="post">
+                          <div class="input-field">
+                            <input name = "files" type = "file" multiple>
+                              <label>Выберите файл</label>
+                          </div>
+                          <div class="input-field">
+                              <input type="text" id="getSecretPhrase" name="secret">
+                              <label for="getSecretPhrase">Введите секретную фразу</label>
+                          </div>
+                          <div class="card-action">
+                              <button class="btn waves-effect waves-light" type="submit">Получить</button>
+                          </div>
+                      </form>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div> -->
+</body>
+</html>
+
+
+
+<!-- <body>
+  {% block content %}
+  <h2>Upload Files</h2>
+  <form action = "/files/upload_files/" enctype = "multipart/form-data"  method="post">
+      <input name = "files" type = "file" multiple>
+      <input name = "files" type = "file" multiple>
+      <input type = "submit">
+  </form>
+
+  <h2>Load File</h2>
+  <form action = "/files/load_file" enctype = "multipart/form-data"  method="get">
+      <input type = "submit">
+  </form>
+  {% endblock content %}
+
+</body>
+</html> -->
+
+

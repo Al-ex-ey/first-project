@@ -5,6 +5,7 @@ import logging
 # import pandas as pd
 import datetime as dt
 import shutil
+from fastapi import HTTPException
 
 # from openpyxl.styles import PatternFill
 # from openpyxl.styles.differential import DifferentialStyle
@@ -55,16 +56,20 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
             else:
                 logging.ERROR(f"___{now.strftime(DT_FORMAT)}___There are no necessary files in the directory")
                 raise
-    except:
+    except Exception:
         logging.ERROR(f"___{now.strftime(DT_FORMAT)}___Something went wrong when chose files")
         raise
     
     try:
         book_arenda = openpyxl.load_workbook(filename=arenda_dir)
         book_debet = openpyxl.load_workbook(filename=debet_dir)
-    except:
+    except (ASGI, OSError, IOError):
+        logging.ERROR(f"___{now.strftime(DT_FORMAT)}___KeyError")
+        raise HTTPException(
+            status_code=404, detail="Ошибка ввода-вывода. Tip: проверьте что файл существует или диск не заполнен!"
+        )
+    except Exception:
         logging.ERROR(f"___{now.strftime(DT_FORMAT)}___Something went wrong when open and reed files")
-        # TypeError: 'int' object is not callable
         raise
 
     sheet_arenda = book_arenda.worksheets[-1]
