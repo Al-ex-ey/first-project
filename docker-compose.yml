@@ -6,8 +6,6 @@ services:
     image: project-mh:latest
     build: .
     restart: always
-    ports:
-     - "8000:8000"
 
   nginx:
     image: nginx:stable

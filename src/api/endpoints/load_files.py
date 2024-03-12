@@ -2,7 +2,6 @@ from fastapi import APIRouter, FastAPI, Request, UploadFile, HTTPException, File
 from fastapi.templating import Jinja2Templates
 # from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
-# from typing import List
 from .validators import load_validate
 import shutil
 import datetime as dt
@@ -11,7 +10,6 @@ from src.parsing_excel.parsing_excel import parsing_excel
 import os
 # import re
 # import openpyxl
-# import logging
 # from openpyxl.styles import NamedStyle, Alignment, Font, Border, Side
 from src.configs import *
 from src.constants import (
