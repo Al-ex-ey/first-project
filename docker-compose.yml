@@ -7,7 +7,7 @@ services:
     restart: always
 
   nginx:
-    image: nginx:stable
+    image: nginx
     ports:
       - "80:80"
     volumes:
