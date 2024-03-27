@@ -4,6 +4,8 @@ services:
 
   project-mh:
     image: alexeysubudaev/project-mh
+    expose:
+      - 8000
     restart: always
 
   nginx:
