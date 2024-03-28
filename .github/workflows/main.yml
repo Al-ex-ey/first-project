@@ -1,4 +1,4 @@
-name: Project-MH workflow_v1_try-43
+name: Project-MH workflow_v1_try-44
 
 on: 
   push:
@@ -68,7 +68,7 @@ jobs:
           script: |
             sudo docker-compose stop
             sudo docker-compose rm project-mh
-            sudo docker-compose rm nginx
+            # sudo docker-compose rm nginx
             sudo docker image rm alexeysubudaev/project-mh -f
             sudo docker image pull alexeysubudaev/project-mh
             # rm -f .env
