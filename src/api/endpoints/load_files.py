@@ -1,16 +1,11 @@
 from fastapi import APIRouter, FastAPI, Request, UploadFile, HTTPException, File, Form
 from fastapi.templating import Jinja2Templates
-# from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from .validators import load_validate
 import shutil
 import datetime as dt
 from src.parsing_excel.parsing_excel import parsing_excel 
-# from typing import Annotated
 import os
-# import re
-# import openpyxl
-# from openpyxl.styles import NamedStyle, Alignment, Font, Border, Side
 from src.configs import *
 from src.constants import (
     AMOUNT_ROW,
@@ -29,10 +24,6 @@ configure_logging()
 router = APIRouter()
 
 app = FastAPI()
-
-# staticfiles = StaticFiles(directory="src/frontend/static")
-# app.mount("/static", StaticFiles(directory="src/frontend/static"), name="static")
-# templates = Jinja2Templates(directory="src/templates")
 
 
 @router.get('/', response_class=HTMLResponse)
