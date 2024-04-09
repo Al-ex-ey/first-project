@@ -63,7 +63,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     try:
         book_arenda = openpyxl.load_workbook(filename=arenda_dir)
         book_debet = openpyxl.load_workbook(filename=debet_dir)
-    except (ASGI, OSError, IOError):
+    except (OSError, IOError):
         logging.ERROR(f"___{now.strftime(DT_FORMAT)}___KeyError")
         raise HTTPException(
             status_code=404, detail="Ошибка ввода-вывода. Tip: проверьте что файл существует или диск не заполнен!"

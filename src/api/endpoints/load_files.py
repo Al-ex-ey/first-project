@@ -26,7 +26,7 @@ router = APIRouter()
 app = FastAPI()
 
 
-@router.get('/', response_class=HTMLResponse)
+@router.get('/files', response_class=HTMLResponse)
 async def upload_load_files(request: Request):
     return templates.TemplateResponse("upload_load_files.html", {"request": request})
 
@@ -46,11 +46,11 @@ def upload_files(files: list[UploadFile]):
     return FileResponse(path, media_type = "xlsx", filename="Arenda_2024.xlsx")
 
 
-@router.get('/load_file')
-def load_file():
-    path = BASE_DIR/"downloads"
-    files_dir = os.listdir(path)
-    if "Arenda_2024.xlsx" in files_dir:
-       return FileResponse(f"{path}/Arenda_2024.xlsx", media_type = "xlsx", filename="Arenda_2024.xlsx")
-    else:
-        raise HTTPException(status_code=404, detail="File not found")
+# @router.get('/load_file')
+# def load_file():
+#     path = BASE_DIR/"downloads"
+#     files_dir = os.listdir(path)
+#     if "Arenda_2024.xlsx" in files_dir:
+#        return FileResponse(f"{path}/Arenda_2024.xlsx", media_type = "xlsx", filename="Arenda_2024.xlsx")
+#     else:
+#         raise HTTPException(status_code=404, detail="File not found")

@@ -6,9 +6,7 @@ from src.api.routers import main_router
 
 app = FastAPI()
 app.include_router(main_router)
-# staticfiles = StaticFiles(directory="src/frontend/static")
-# app.mount("/static", StaticFiles(directory="src/frontend/static"), name="static")
-# templates = Jinja2Templates(directory="src/frontend/templates")
+
 
 # app.get('/', response_class=HTMLResponse)
 # def index(request: Request):
