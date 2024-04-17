@@ -2,7 +2,7 @@ import logging
 from src.constants import BASE_DIR, LOG_FORMAT, DT_FORMAT
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi import FastAPI
+# from fastapi import FastAPI
 
 
 def configure_logging():
@@ -17,9 +17,10 @@ def configure_logging():
         handlers=(logging.FileHandler(log_file, encoding='utf-8', mode="w"),)
     )
 
-
 templates = Jinja2Templates(directory="src/templates")
 
 # app = FastAPI()
 
 # app.mount("/static", StaticFiles(directory="src/static"), name="static")
+
+
