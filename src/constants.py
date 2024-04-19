@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import datetime as dt
 
 load_dotenv()
+
 now = dt.datetime.now()
 
 BASE_DIR = Path(__file__).parent
