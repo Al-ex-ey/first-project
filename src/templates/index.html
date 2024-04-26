@@ -3,11 +3,20 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
+        <br><br>
+        <form action="/mail" method="get">
         <a href="/files" class="btn btn-primary">Обновить данные</a>
+        </form>
         <br><br>
         <form action="/mail" method="post">
             <div class="card-action">
                 <button class="btn btn-primary" input type="submit">Отправить письмо</button>
+            </div>
+        </form>
+        <br><br>
+        <form action="/download_file" method="get">
+            <div class="card-action">
+                <button class="btn btn-primary" input type="submit">Скачать</button>
             </div>
         </form>
         <!-- <a href="mail/" class="btn btn-primary">Отправить письмо </a> -->

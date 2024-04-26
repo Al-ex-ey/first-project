@@ -26,6 +26,7 @@ MAIL_USERNAME = os.getenv("MAIL_USERNAME")
 MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
 MAIL_PORT = os.getenv("MAIL_PORT")
 MAIL_TO = os.getenv("MAIL_TO")
+MAIL_CC = os.getenv("MAIL_CC")
 
 TEXT_REPLACEMENTS = {
     "lessor_name": "АО «Проспект недвижимость»",
