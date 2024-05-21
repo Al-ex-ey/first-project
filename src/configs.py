@@ -2,8 +2,18 @@ import logging
 from src.constants import BASE_DIR, LOG_FORMAT, DT_FORMAT
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseSettings
 # from fastapi import FastAPI
 
+
+class Settings(BaseSettings):
+    app_title: str = 'Project MH'
+    database_url: str
+
+    class Config:
+        env_file = '.env'
+
+settings = Settings() 
 
 def configure_logging():
     log_dir = BASE_DIR / 'logs'
@@ -18,9 +28,3 @@ def configure_logging():
     )
 
 templates = Jinja2Templates(directory="src/templates")
-
-# app = FastAPI()
-
-# app.mount("/static", StaticFiles(directory="src/static"), name="static")
-
-

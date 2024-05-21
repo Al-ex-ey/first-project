@@ -10,7 +10,7 @@ from fastapi import HTTPException
 # from openpyxl.styles import PatternFill
 # from openpyxl.styles.differential import DifferentialStyle
 # from openpyxl.formatting.rule import Rule
-from openpyxl.styles import NamedStyle, Alignment, Font, Border, Side
+from openpyxl.styles import NamedStyle, Alignment, Font, Border, Side, PatternFill
 from src.configs import configure_logging
 from src.constants import (
     AMOUNT_ROW,
@@ -100,30 +100,40 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
         logging.ERROR(f"___{now.strftime(DT_FORMAT)}___Something went wrong when delete rows")
         raise
 
-
     for a in range(1, ARENDA_AMOUNT_ROW):
         arendator_cell = sheet_arenda.cell(row=a, column=1)
         if arendator_cell.value == "КОНТАКТЫ":
             break
         AMOUNT_ROW_TOTAL = AMOUNT_ROW_TOTAL + 1
-        if (arendator_cell.value == None) or (arendator_cell.font.bold == True) or (arendator_cell.value in arendator_list):
+        if (arendator_cell.value == None) or (arendator_cell.font.bold == True):
             continue
-        arendator_list.append(arendator_cell.value)
+        new_sheet.cell(a, column=3, value='').fill = PatternFill(fill_type='solid', start_color='FFFFC0')
+        new_sheet.cell(a, column=4, value='').fill = PatternFill(fill_type='solid', start_color='FFFFC0')
+        
 
-    for d in range(1, DEBIT_AMOUNT_ROW):
-        debit_arendator_cell = sheet_debet.cell(row=d, column=1)
-        if arendator_cell.value == "Итого":
-            break
-        if (debit_arendator_cell.value == None) or (debit_arendator_cell.alignment.indent > 0) or (debit_arendator_cell.value in arendator_debet_list):
-            continue
-        arendator_debet_list.append(debit_arendator_cell.value)
+    # for a in range(1, ARENDA_AMOUNT_ROW):
+    #     arendator_cell = sheet_arenda.cell(row=a, column=1)
+    #     if arendator_cell.value == "КОНТАКТЫ":
+    #         break
+    #     AMOUNT_ROW_TOTAL = AMOUNT_ROW_TOTAL + 1
+    #     if (arendator_cell.value == None) or (arendator_cell.font.bold == True) or (arendator_cell.value in arendator_list):
+    #         continue
+    #     arendator_list.append(arendator_cell.value)
 
-    for a in arendator_list:
-        for d in arendator_debet_list:
-            if a == d:
-                continue
-            if a not in arendator_debet_list and a not in arendators_not_in_debet_list:
-                arendators_not_in_debet_list.append(a)
+    # for d in range(1, DEBIT_AMOUNT_ROW):
+    #     debit_arendator_cell = sheet_debet.cell(row=d, column=1)
+    #     if arendator_cell.value == "Итого":
+    #         break
+    #     if (debit_arendator_cell.value == None) or (debit_arendator_cell.alignment.indent > 0) or (debit_arendator_cell.value in arendator_debet_list):
+    #         continue
+    #     arendator_debet_list.append(debit_arendator_cell.value)
+
+    # for a in arendator_list:
+    #     for d in arendator_debet_list:
+    #         if a == d:
+    #             continue
+    #         if a not in arendator_debet_list and a not in arendators_not_in_debet_list:
+    #             arendators_not_in_debet_list.append(a)
 
     pattern = re.compile(r'\w+[\-|\.]?\w+')
 
@@ -131,9 +141,10 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
         arendator_cell = sheet_arenda.cell(row=i, column=1)
         if arendator_cell.value == "КОНТАКТЫ":
             break
+        AMOUNT_A_TOTAL = AMOUNT_A_TOTAL + 1
         if arendator_cell.value == None or arendator_cell.font.bold == True:
             continue
-        AMOUNT_ROW = AMOUNT_ROW + 1
+        # AMOUNT_ROW = AMOUNT_ROW + 1
         arendator = arendator_cell.value
         for d in sheet_debet.iter_rows(min_row=10, max_row=DEBIT_AMOUNT_ROW, min_col=1, max_col=3):
             debet_arendator_cell = d[0]
@@ -150,51 +161,88 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
                     lost_contracts.append(arendator)
                 continue
 
-            for contract in range(1, 20): 
-                cell_debet_contract = debet_arendator_cell.offset(row=contract)
-                try:
-                    if comparison and (cell_arenda_contract.value == cell_debet_contract.value):
-                        debet_amount = cell_debet_contract.offset(column=1)
-                        credit_amount = cell_debet_contract.offset(column=2)
-                        logging.info(f"___ {arendator} ----- {cell_arenda_contract.value} ----- {debet_amount.value} ----- {credit_amount.value}\n")
-                        if not debet_amount.value:
-                            style_bad = "Normal"
-                        else:
-                            style_bad = "Bad"
-                        if credit_amount.value:
-                            style_good = "Good"
-                        else:
-                            style_good = "Normal"
-                        if debet_amount.value == None:
-                            debet_amount.value = 0
-                        if credit_amount.value == None:
-                            credit_amount.value = 0
-                        bd = Side(style='thin', color="00000000")
-                        new_sheet.cell(i, column=3, value=debet_amount.value).style = style_bad
-                        new_sheet.cell(i, column=3).alignment = Alignment(horizontal="center", vertical="center")
-                        new_sheet.cell(i, column=3).border = Border(left=bd, top=bd, right=bd, bottom=bd)
-                        new_sheet.cell(i, column=4, value=credit_amount.value).style = style_good
-                        new_sheet.cell(i, column=4).alignment = Alignment(horizontal="center", vertical="center")
-                        new_sheet.cell(i, column=4).border = Border(left=bd, top=bd, right=bd, bottom=bd)
-                        AMOUNT_A = AMOUNT_A + 1
-                        break
-                except:
-                    raise
+            for r in range(1, 20): 
+                cell_debet_contract = debet_arendator_cell.offset(row=r)
+                if comparison and (cell_arenda_contract.value == cell_debet_contract.value):
+                    debet_cell = cell_debet_contract.offset(column=1)
+                    credit_cell = cell_debet_contract.offset(column=2)
+                    logging.info(f"___ {arendator} ----- {cell_arenda_contract.value} ----- {debet_cell.value} ----- {credit_cell.value}\n")
+                    if not debet_cell.value:
+                        style_bad = "Normal"
+                    else:
+                        style_bad = "Bad"
+                    if credit_cell.value:
+                        style_good = "Good"
+                    else:
+                        style_good = "Normal"
+                    if debet_cell.value == None:
+                        debet_cell.value = 0
+                    if credit_cell.value == None:
+                        credit_cell.value = 0
+                    bd = Side(style='thin', color="00000000")
+                    new_sheet.cell(i, column=3, value=debet_cell.value).style = style_bad
+                    new_sheet.cell(i, column=3).alignment = Alignment(horizontal="center", vertical="center")
+                    new_sheet.cell(i, column=3).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                    new_sheet.cell(i, column=4, value=credit_cell.value).style = style_good
+                    new_sheet.cell(i, column=4).alignment = Alignment(horizontal="center", vertical="center")
+                    new_sheet.cell(i, column=4).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                    AMOUNT_A = AMOUNT_A + 1
+                    break
 
     book_arenda.save(arenda_dir)
-    AMOUNT_A = AMOUNT_A + len(arendators_not_in_debet_list)
-    if AMOUNT_ROW != AMOUNT_A:
+
+    """Проверка файла по критериям: арендаторы без договоров, необработанные позиции"""
+    arendator_without_contract = []
+    not_processed = {}
+
+    path = BASE_DIR/"downloads"
+    files_dir = os.listdir(path)
+    if "Arenda_2024.xlsx" in files_dir:
+       book_arenda = openpyxl.load_workbook(filename=arenda_dir)
+    else:
+        raise HTTPException(status_code=404, detail="File not found")
+    sheet_arenda = book_arenda.worksheets[-1]
+
+
+    for b in tqdm(range(1, AMOUNT_A_TOTAL), desc="Wait a going process"):
+        arendator_cell = sheet_arenda.cell(row=b, column=1)
+        contract_cell = sheet_arenda.cell(row=b, column=2)
+        debet_cell = sheet_arenda.cell(row=b, column=3)
+        credit_cell = sheet_arenda.cell(row=b, column=4)
+        if arendator_cell.value == "КОНТАКТЫ":
+            break
+        if (arendator_cell.value == None) or (arendator_cell.font.bold == True):
+            continue
+        AMOUNT_ROW = AMOUNT_ROW + 1
+        if contract_cell.value == None:
+            arendator_without_contract.append(arendator_cell.value)
+            continue
+        if debet_cell.fill == PatternFill(fill_type='solid', start_color='FFFFC0') or credit_cell.fill == PatternFill(fill_type='solid', start_color='FFFFC0'):
+            not_processed[arendator_cell.value] = contract_cell.value
+        
+
+    # AMOUNT_ROW_TOTAL = AMOUNT_A + len(arendator_without_contract) + len(not_processed)
+    amount_wrong_row = len(not_processed) + len(arendator_without_contract)
+    if AMOUNT_ROW != AMOUNT_A + amount_wrong_row:
         color = 31
     else:
         color = 32
-    print(f"\033[1;{color};40m ========== {AMOUNT_A} строк в выводе из {AMOUNT_ROW} (арендаторы в файле аренда) ========== \033[0;0m\n")
-    print(f"Аредаторы без договоров____{lost_contracts}\n")
-    print(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
-    print(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
-    logging.info(f"\033[1;{color};40m ========== {AMOUNT_A} строк в выводе из {AMOUNT_ROW} (арендаторы в файле аренда) ========== \033[0;0m\n")
-    logging.info(f"Аредаторы без договоров____{lost_contracts}\n")
-    logging.info(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
-    logging.info(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
+    print(f"\033[1;{color};40m ===== {AMOUNT_A} обработанных строк из {AMOUNT_ROW}  ===== в том числе {amount_wrong_row} строк без обработки ===== \033[0;0m\n")
+    print("Обратите внимание:\n")
+    print(f"\033[1;31;40m ===== Необработанные позиции ===== {not_processed}  \033[0;0m\n")
+    print(f"\033[1;31;40m ===== Арендаторы без договоров ===== {arendator_without_contract}  \033[0;0m\n")
+
+
+    # print(f"\033[1;{color};40m ========== {AMOUNT_A} строк в выводе из {AMOUNT_ROW} (арендаторы в файле аренда) ========== \033[0;0m\n")
+    # print(f"Аредаторы без договоров____{lost_contracts}\n")
+    # print(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
+    # # print(f"Аредаторы с некорректными договорами: {incorrect_contracts}\n")
+    # print(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
+    # logging.info(f"\033[1;{color};40m ========== {AMOUNT_A} строк в выводе из {AMOUNT_ROW} (арендаторы в файле аренда) ========== \033[0;0m\n")
+    # logging.info(f"Аредаторы без договоров____{lost_contracts}\n")
+    # logging.info(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
+    # # logging.info(f"Аредаторы с некорректными договорами: {incorrect_contracts}\n")
+    # logging.info(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
 
 
 
