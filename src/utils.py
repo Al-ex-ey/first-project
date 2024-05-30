@@ -23,3 +23,12 @@ async def load_file():
        return FileResponse(f"{path}/Arenda_2024.xlsx", media_type = "xlsx", filename="Arenda_2024.xlsx")
     else:
         raise HTTPException(status_code=404, detail="File not found")
+    
+
+# async def result_excel_parsing():
+#     path = BASE_DIR/"downloads"
+#     files_dir = os.listdir(path)
+#     if "Arenda_2024.xlsx" in files_dir:
+        
+#     else:
+#         raise HTTPException(status_code=404, detail="File not found")

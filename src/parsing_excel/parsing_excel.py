@@ -5,7 +5,8 @@ import logging
 # import pandas as pd
 import datetime as dt
 import shutil
-from fastapi import HTTPException
+from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import RedirectResponse
 
 # from openpyxl.styles import PatternFill
 # from openpyxl.styles.differential import DifferentialStyle
@@ -27,6 +28,8 @@ from tqdm import tqdm
 
 
 configure_logging()
+
+router = APIRouter()
 
 # data = sheet_arenda.values
 # df = pd.DataFrame(data)
@@ -201,14 +204,19 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
        book_arenda = openpyxl.load_workbook(filename=arenda_dir)
     else:
         raise HTTPException(status_code=404, detail="File not found")
+    
     sheet_arenda = book_arenda.worksheets[-1]
-
+    result_table: dict[str, list] = {}
+    total_credit: float = 0
+    total_debet: float = 0
 
     for b in tqdm(range(1, AMOUNT_A_TOTAL), desc="Wait a going process"):
+    # for b in tqdm(sheet_arenda.iter_rows(min_row=1, max_col=10, max_row=AMOUNT_A_TOTAL), desc="Wait a going process"):
         arendator_cell = sheet_arenda.cell(row=b, column=1)
         contract_cell = sheet_arenda.cell(row=b, column=2)
         debet_cell = sheet_arenda.cell(row=b, column=3)
         credit_cell = sheet_arenda.cell(row=b, column=4)
+        email_cell = sheet_arenda.cell(row=b, column=9)
         if arendator_cell.value == "КОНТАКТЫ":
             break
         if (arendator_cell.value == None) or (arendator_cell.font.bold == True):
@@ -219,6 +227,14 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
             continue
         if debet_cell.fill == PatternFill(fill_type='solid', start_color='FFFFC0') or credit_cell.fill == PatternFill(fill_type='solid', start_color='FFFFC0'):
             not_processed[arendator_cell.value] = contract_cell.value
+        if debet_cell.value == None:
+            if credit_cell.value == None:
+                continue
+        if debet_cell.value > 0:
+            result_table = [arendator_cell.value, contract_cell.value, debet_cell.value, email_cell.value]
+            total_debet = total_debet + round(debet_cell.value, 2)
+        if credit_cell.value > 0:
+            total_credit = total_credit + round(credit_cell.value, 2)
         
 
     # AMOUNT_ROW_TOTAL = AMOUNT_A + len(arendator_without_contract) + len(not_processed)
@@ -227,7 +243,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
         color = 31
     else:
         color = 32
-    print(f"\033[1;{color};40m ===== {AMOUNT_A} обработанных строк из {AMOUNT_ROW}  ===== в том числе {amount_wrong_row} строк без обработки ===== \033[0;0m\n")
+    print(f"\033[1;{color};40m ===== {AMOUNT_A} обработанных строк из {AMOUNT_ROW}  ===== в том числе {amount_wrong_row} строк(а) без обработки ===== \033[0;0m\n")
     print("Обратите внимание:\n")
     print(f"\033[1;31;40m ===== Необработанные позиции ===== {not_processed}  \033[0;0m\n")
     print(f"\033[1;31;40m ===== Арендаторы без договоров ===== {arendator_without_contract}  \033[0;0m\n")
@@ -237,14 +253,33 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     # print(f"Аредаторы без договоров____{lost_contracts}\n")
     # print(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
     # # print(f"Аредаторы с некорректными договорами: {incorrect_contracts}\n")
-    # print(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
+    print(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
     # logging.info(f"\033[1;{color};40m ========== {AMOUNT_A} строк в выводе из {AMOUNT_ROW} (арендаторы в файле аренда) ========== \033[0;0m\n")
     # logging.info(f"Аредаторы без договоров____{lost_contracts}\n")
     # logging.info(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
     # # logging.info(f"Аредаторы с некорректными договорами: {incorrect_contracts}\n")
-    # logging.info(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
+    logging.info(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
 
+    # result_table = result_excel_parsing()
 
+    # for b in tqdm(range(1, AMOUNT_A_TOTAL), desc="Wait a going process"):
+    #     if debet_cell.value > 0:
+    #         result_table[arendator_cell.value] = [arendator_cell.value, contract_cell.value, debet_cell.value, email_cell.value]
+    #         total_debet = total_debet + debet_cell.value
+    #     if credit_cell > 0:
+    #         total_credit = total_credit + credit_cell.value
+
+    query_params = {
+        "arendator_without_contract": arendator_without_contract,
+        "not_processed": not_processed,
+        "file_name": file_name,
+        "file_path": file_path,
+        "result_table": result_table,
+        "total_debet": total_debet,
+        "total_credit": total_credit,
+    }
+
+    return query_params
 
 
 

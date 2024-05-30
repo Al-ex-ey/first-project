@@ -2,8 +2,7 @@ import logging
 from src.constants import BASE_DIR, LOG_FORMAT, DT_FORMAT
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseSettings
-# from fastapi import FastAPI
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):

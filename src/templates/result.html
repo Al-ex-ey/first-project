@@ -1,5 +1,38 @@
 {% extends "base.html" %}
 
 {% block content %}
+<h1>Result</h1>
+<h3> Обработанный файл: {{ query_params.file_name }} взятый из пути: {{ query_params.file_path }}</h3>
+<h3> Арендаторы без договоров: {{ query_params.arendator_without_contract }}</h3>
+<h3> Не обработанные арендаторы: {{ query_params.not_processed }}</h3>
+<h3> Общая сумма задолженности у арендаторов: {{ query_params.total_debet }}</h3>
+<h3> Общая сумма переплаты/обеспесительного плтежа у арендаторов: {{ query_params.total_credit }}</h3>
+<h6> result_table: {{ query_params.result_table }}</h6>
 
+<div class="row">
+    <div class="col-12">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Арендатор</th>
+                    <th>Договор</th>
+                    <th>Дебет</th>
+                    <th width="150">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for unit in query_params.result_table %}
+                    <tr>
+                        <td>{{ query_params.result_table[0] }}</td>
+                        <td>{{ query_params.result_table[1] }}</td>
+                        <td>{{ query_params.result_table[2] }}</td>
+                        <td>
+                            <a href=# class="btn btn-success">Edit</a> | <a href=# class="btn btn-danger">Delete</a>  
+                        </td>
+                    </tr>
+                {% endfor %}    
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

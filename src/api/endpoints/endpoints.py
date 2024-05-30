@@ -9,8 +9,6 @@ import smtplib
 import imaplib
 import time
 from email.message import EmailMessage
-# from src.configs import *
-# from src.constants import MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD, MAIL_PORT, MAIL_TO, TEXT_REPLACEMENTS, MAIL_CC
 from src.utils import template_processing
 from fastapi import APIRouter, FastAPI, Request, UploadFile, File, Form, status
 from fastapi.templating import Jinja2Templates
@@ -49,6 +47,11 @@ lease_contract_date = "01.02.2021"
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+
+@router.get('/result', response_class=HTMLResponse)
+async def result(request: Request):
+    return templates.TemplateResponse("result.html", {"request": request})
+
 @router.post('/mail')
 async def send_mail():
     file = await template_processing(lessee, lease_contract_nomber, lease_contract_date)
@@ -83,25 +86,26 @@ async def upload_load_files(request: Request):
     return templates.TemplateResponse("upload_load_files.html", {"request": request})
 
 
-@router.post('/upload_files')
-async def upload_files(files: list[UploadFile]):
+@router.post('/upload_files', response_class=HTMLResponse)
+async def upload_files(files: list[UploadFile], request: Request):
     load_validate(files)
-    result = []
+    file_list = []
     for file in files:
         downloads_dir = BASE_DIR/"downloads"
         downloads_dir.mkdir(exist_ok=True)
-
         with open(downloads_dir/file.filename,"wb+") as buffer:
             try:
                 shutil.copyfileobj(file.file, buffer)
             except Exception as e:
                 raise e
+        file_list.append(file)
 
-        result.append(file)
+    query_params = parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA_AMOUNT_ROW, DEBIT_AMOUNT_ROW)
 
-    parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA_AMOUNT_ROW, DEBIT_AMOUNT_ROW)
     path = BASE_DIR/"downloads"
     files_dir = os.listdir(path)
+    if "Arenda_2024.xlsx" in files_dir:
+        return templates.TemplateResponse("result.html", status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "query_params": query_params})
     return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -114,7 +118,3 @@ async def download_file():
         return FileResponse(f"{downloads_dir}/Arenda_2024.xlsx", media_type = "xlsx", filename="Arenda_2024.xlsx")
     except Exception as e:
         raise FileNotFoundError(f"File '{downloads_dir}/Arenda_2024.xlsx' not found")
-
-
-    
-
