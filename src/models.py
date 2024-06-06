@@ -4,7 +4,9 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, declared_attr, sessionmaker
 
-from src.configs import settings
+from src.configs import *
+
+engine = create_async_engine(settings.database_url, echo=True)
 
 
 class PreBase:
@@ -19,24 +21,22 @@ class PreBase:
 
 Base = declarative_base(cls=PreBase)
 
-engine = create_async_engine(settings.database_url)
-
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession)
 
 class Arenda(Base):
-    arendator = Column("ФИО арендатора", String(100))
-    contract = Column(String(100), unique=True)
-    debet = Column(Integer)
-    credit = Column(Integer)
-    insurance_fee = Column(Integer)
-    note = Column(String(200))
-    business_type = Column(String(100))
-    email = Column(String(50))
-    email2 = Column(String(50))
-    email3 = Column(String(50))
-    phone_nomber = Column(String(60))
-    phone_nomber2 = Column(String(60))
-    phone_nomber3 = Column(String(60))
+    arendator = Column("ФИО арендатора", String(100)) # название арендатора
+    contract = Column(String(100), unique=True) # название договора
+    debet = Column(Integer) # сумма долга
+    credit = Column(Integer) # сумма перплаты   
+    insurance_fee = Column(Integer) # страховая сумма
+    note = Column(String(200)) # примечание
+    business_type = Column(String(100)) # сфера деятельности
+    email = Column(String(50)) # адрес эл. почты (официльный адрес прописанный в договоре)
+    email2 = Column(String(50)) # адрес эл. почты для дублирования (не оф.)
+    email3 = Column(String(50)) # адрес эл. почты для дублирования (не оф. 2)
+    phone_nomber = Column(String(60)) # номер телефона (основной)
+    phone_nomber2 = Column(String(60)) # номер телефона (запасной)
+    phone_nomber3 = Column(String(60)) # номер телефона (запасной 2)
 
 
 

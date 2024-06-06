@@ -11,7 +11,6 @@ import time
 from email.message import EmailMessage
 from src.utils import template_processing
 from fastapi import APIRouter, FastAPI, Request, UploadFile, File, Form, status
-from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from .validators import load_validate
 import shutil
@@ -28,20 +27,22 @@ from src.constants import (
     BASE_DIR,
     DEBIT_AMOUNT_ROW,
     DT_FORMAT,
-    MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD, MAIL_PORT, MAIL_TO, TEXT_REPLACEMENTS, MAIL_CC
+    # MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD, MAIL_PORT, MAIL_TO, TEXT_REPLACEMENTS, MAIL_CC
 )
+
+templates = Jinja2Templates(directory="src/templates")
 
 configure_logging()
 
 router = APIRouter()
 
-MAIL_TEXT = "Тестовое письмо"
-MAIL_SUBJECT = "Тема письма"
+# MAIL_TEXT = "Тестовое письмо"
+# MAIL_SUBJECT = "Тема письма"
 
-file = "XXXX.pdf"
-lease_contract_nomber = "1"
-lessee = "АвагянВО"
-lease_contract_date = "01.02.2021"
+# file = "XXXX.pdf"
+# lease_contract_nomber = "1"
+# lessee = "АвагянВО"
+# lease_contract_date = "01.02.2021"
 
 @router.get('/', response_class=HTMLResponse)
 async def index(request: Request):
@@ -52,33 +53,37 @@ async def index(request: Request):
 async def result(request: Request):
     return templates.TemplateResponse("result.html", {"request": request})
 
-@router.post('/mail')
-async def send_mail():
-    file = await template_processing(lessee, lease_contract_nomber, lease_contract_date)
-    msg = EmailMessage()
-    msg['Subject'] = MAIL_SUBJECT
-    msg['From'] = MAIL_HOST
-    msg['To'] = MAIL_TO
-    msg['Cc'] = MAIL_CC
-    msg.set_content(MAIL_TEXT)
+@router.get('/send_mail', response_class=HTMLResponse)
+async def result(request: Request):
+    return templates.TemplateResponse("send_mail.html", {"request": request})
 
-    downloads_dir = BASE_DIR/"send_files"
-    with open(downloads_dir/file, 'rb') as f:
-        file_data = f.read()
-    msg.add_attachment(file_data, maintype="application", subtype="application/pdf", filename=file)
+# @router.post('/mail')
+# async def send_mail():
+#     file = await template_processing(lessee, lease_contract_nomber, lease_contract_date)
+#     msg = EmailMessage()
+#     msg['Subject'] = MAIL_SUBJECT
+#     msg['From'] = MAIL_HOST
+#     msg['To'] = MAIL_TO
+#     msg['Cc'] = MAIL_CC
+#     msg.set_content(MAIL_TEXT)
 
-    with smtplib.SMTP_SSL('smtp.mail.ru', MAIL_PORT) as smtp:
-        smtp.login(MAIL_HOST, MAIL_PASSWORD)
-        smtp.send_message(msg)
+#     downloads_dir = BASE_DIR/"send_files"
+#     with open(downloads_dir/file, 'rb') as f:
+#         file_data = f.read()
+#     msg.add_attachment(file_data, maintype="application", subtype="application/pdf", filename=file)
 
-    # imap = imaplib.IMAP4('smtp.mail.ru', 143)                     # Подключаемся в почтовому серверу
-    # imap.login(MAIL_HOST, MAIL_PASSWORD)                        # Логинимся в свой ящик
-    # imap.select('Sent')                                       # Переходим в папку Исходящие
-    # imap.append('Sent', None,                                 # Добавляем наше письмо в папку Исходящие
-    #             imaplib.Time2Internaldate(time.time()),
-    #             msg.as_bytes())
+#     with smtplib.SMTP_SSL('smtp.mail.ru', MAIL_PORT) as smtp:
+#         smtp.login(MAIL_HOST, MAIL_PASSWORD)
+#         smtp.send_message(msg)
+
+#     # imap = imaplib.IMAP4('smtp.mail.ru', 143)                     # Подключаемся в почтовому серверу
+#     # imap.login(MAIL_HOST, MAIL_PASSWORD)                        # Логинимся в свой ящик
+#     # imap.select('Sent')                                       # Переходим в папку Исходящие
+#     # imap.append('Sent', None,                                 # Добавляем наше письмо в папку Исходящие
+#     #             imaplib.Time2Internaldate(time.time()),
+#     #             msg.as_bytes())
  
-    return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
+#     return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get('/files', response_class=HTMLResponse)
@@ -112,9 +117,12 @@ async def upload_files(files: list[UploadFile], request: Request):
 @router.get('/download_file')
 async def download_file():
     downloads_dir = BASE_DIR/"downloads"
-    downloads_dir.mkdir(exist_ok=True)
+    # downloads_dir.mkdir(exist_ok=True)
     files_dir = os.listdir(downloads_dir)
-    try:
-        return FileResponse(f"{downloads_dir}/Arenda_2024.xlsx", media_type = "xlsx", filename="Arenda_2024.xlsx")
-    except Exception as e:
-        raise FileNotFoundError(f"File '{downloads_dir}/Arenda_2024.xlsx' not found")
+    if "Arenda_2024.xlsx" in files_dir:
+        try:
+            return FileResponse(f"{downloads_dir}/Arenda_2024.xlsx", media_type = "xlsx", filename="Arenda_2024.xlsx")
+        except Exception as e:
+            raise FileNotFoundError(f"File in '{downloads_dir}/Arenda_2024.xlsx' not found")
+    else:
+        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)

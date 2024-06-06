@@ -17,17 +17,17 @@
                     <th>Арендатор</th>
                     <th>Договор</th>
                     <th>Дебет</th>
-                    <th width="150">Action</th>
+                    <th width="170">Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for unit in query_params.result_table %}
                     <tr>
-                        <td>{{ query_params.result_table[0] }}</td>
-                        <td>{{ query_params.result_table[1] }}</td>
-                        <td>{{ query_params.result_table[2] }}</td>
+                        <td>{{ unit[0] }}</td>
+                        <td>{{ unit[1] }}</td>
+                        <td>{{ unit[2] }}</td>
                         <td>
-                            <a href=# class="btn btn-success">Edit</a> | <a href=# class="btn btn-danger">Delete</a>  
+                            <a href=# class="btn btn-danger">SendReminder</a> | <a href="/send_mail?value={{ unit }}" class="btn btn-danger">SendMail</a> | <a href=# class="btn btn-danger">SendMessege</a>  
                         </td>
                     </tr>
                 {% endfor %}    

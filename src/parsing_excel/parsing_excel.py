@@ -206,7 +206,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
         raise HTTPException(status_code=404, detail="File not found")
     
     sheet_arenda = book_arenda.worksheets[-1]
-    result_table: dict[str, list] = {}
+    result_table: list = []
     total_credit: float = 0
     total_debet: float = 0
 
@@ -231,7 +231,12 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
             if credit_cell.value == None:
                 continue
         if debet_cell.value > 0:
-            result_table = [arendator_cell.value, contract_cell.value, debet_cell.value, email_cell.value]
+            rt: list = []
+            rt.append(arendator_cell.value)
+            rt.append(contract_cell.value)
+            rt.append(debet_cell.value)
+            rt.append(email_cell.value)
+            result_table.append(rt)
             total_debet = total_debet + round(debet_cell.value, 2)
         if credit_cell.value > 0:
             total_credit = total_credit + round(credit_cell.value, 2)
@@ -254,20 +259,11 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     # print(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
     # # print(f"Аредаторы с некорректными договорами: {incorrect_contracts}\n")
     print(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
-    # logging.info(f"\033[1;{color};40m ========== {AMOUNT_A} строк в выводе из {AMOUNT_ROW} (арендаторы в файле аренда) ========== \033[0;0m\n")
+    logging.info(f"\033[1;{color};40m ===== {AMOUNT_A} обработанных строк из {AMOUNT_ROW}  ===== в том числе {amount_wrong_row} строк(а) без обработки ===== \033[0;0m\n")
     # logging.info(f"Аредаторы без договоров____{lost_contracts}\n")
     # logging.info(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
     # # logging.info(f"Аредаторы с некорректными договорами: {incorrect_contracts}\n")
     logging.info(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
-
-    # result_table = result_excel_parsing()
-
-    # for b in tqdm(range(1, AMOUNT_A_TOTAL), desc="Wait a going process"):
-    #     if debet_cell.value > 0:
-    #         result_table[arendator_cell.value] = [arendator_cell.value, contract_cell.value, debet_cell.value, email_cell.value]
-    #         total_debet = total_debet + debet_cell.value
-    #     if credit_cell > 0:
-    #         total_credit = total_credit + credit_cell.value
 
     query_params = {
         "arendator_without_contract": arendator_without_contract,

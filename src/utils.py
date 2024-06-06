@@ -1,6 +1,6 @@
 import os
 from fastapi import HTTPException
-from src.constants import BASE_DIR, TEXT_REPLACEMENTS
+from src.constants import BASE_DIR#, TEXT_REPLACEMENTS
 from docxtpl import DocxTemplate
 from fastapi.responses import FileResponse
 
