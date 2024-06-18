@@ -1,0 +1,1 @@
+from .models import Arenda  # noqa

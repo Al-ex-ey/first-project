@@ -5,9 +5,8 @@ from dotenv import load_dotenv
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
-from sqlalchemy.ext.asyncio import AsyncEngine
 from alembic import context
-from src.models import Base
+from src.db import Base
 
 
 load_dotenv('.env')
@@ -16,7 +15,7 @@ load_dotenv('.env')
 # access to the values within the .ini file in use.
 config = context.config
 
-config.set_main_option('sqlalchemy.url', os.environ['DATABASE_URL'])
+
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -33,7 +32,7 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-
+config.set_main_option('sqlalchemy.url', os.environ['DATABASE_URL'])
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
