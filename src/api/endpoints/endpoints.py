@@ -117,7 +117,7 @@ async def upload_files(files: list[UploadFile], request: Request):
 @router.get('/download_file')
 async def download_file():
     downloads_dir = BASE_DIR/"downloads"
-    # downloads_dir.mkdir(exist_ok=True)
+    downloads_dir.mkdir(exist_ok=True)
     files_dir = os.listdir(downloads_dir)
     if "Arenda_2024.xlsx" in files_dir:
         try:
