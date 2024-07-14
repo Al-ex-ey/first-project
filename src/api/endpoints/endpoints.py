@@ -83,7 +83,7 @@ async def upload_files(files: list[UploadFile], request: Request):
 
 
 @router.get('/download_file')
-async def download_file():
+async def download_file(request: Request):
     downloads_dir = BASE_DIR/"downloads"
     downloads_dir.mkdir(exist_ok=True)
     files_dir = os.listdir(downloads_dir)
@@ -94,11 +94,6 @@ async def download_file():
             raise FileNotFoundError(f"File in '{downloads_dir}/Arenda_2024.xlsx' not found")
     else:
         return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
-    
-
-@router.get('/SendReminder', response_class=HTMLResponse)
-async def send_mail(request: Request):
-    return templates.TemplateResponse("Reminder_mail.html", {"request": request})
 
 
 @router.get('/mail', response_class=HTMLResponse)
@@ -106,9 +101,19 @@ async def mail(request: Request):
     return templates.TemplateResponse("mail.html", {"request": request})
 
 
-@router.get('/SendMessege', response_class=HTMLResponse)
-async def send_mail(request: Request):
-    return templates.TemplateResponse("Messege_mail.html", {"request": request})
+@router.post('/send_reminder', response_class=HTMLResponse)
+async def send_reminder(request: Request):
+    pass
+
+
+@router.post('/send_mail', response_class=HTMLResponse)
+async def mail(request: Request):
+    pass
+
+
+@router.post('/send_messege', response_class=HTMLResponse)
+async def send_massege(request: Request):
+    pass
 
 
 # @router.post('/send_mail')
