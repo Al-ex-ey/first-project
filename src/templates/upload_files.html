@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<div class="container mt-5">
+    <h3 class="center-align">Загрузите файлы</h3>
+    <div class="row">
+        <div class="col s12 m8 offset-m2">
+            <div class="card">
+                <div class="card-content">
+                    <form action = "/upload_files/" enctype = "multipart/form-data"  method="post">
+                        <div class="input-field">
+                            <input name = "files" type = "file" multiple>
+                        </div>
+                        <div class="input-field">
+                            <input name = "files" type = "file" multiple>
+                        </div>
+                        <div class="card-action">
+                            <button class="btn btn-outline-primary" type="submit">Отправить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

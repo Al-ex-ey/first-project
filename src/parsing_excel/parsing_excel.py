@@ -198,6 +198,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     arendator_without_contract = []
     not_processed = {}
 
+    """ Проверка результата работы - Поиск необработанных позиций в только что созданом файле"""
     path = BASE_DIR/"downloads"
     files_dir = os.listdir(path)
     if "Arenda_2024.xlsx" in files_dir:
@@ -210,36 +211,38 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     total_credit: float = 0
     total_debet: float = 0
 
-    for b in tqdm(range(1, AMOUNT_A_TOTAL), desc="Wait a going process"):
+    for b in range(1, AMOUNT_A_TOTAL):
     # for b in tqdm(sheet_arenda.iter_rows(min_row=1, max_col=10, max_row=AMOUNT_A_TOTAL), desc="Wait a going process"):
-        arendator_cell = sheet_arenda.cell(row=b, column=1)
-        contract_cell = sheet_arenda.cell(row=b, column=2)
-        debet_cell = sheet_arenda.cell(row=b, column=3)
-        credit_cell = sheet_arenda.cell(row=b, column=4)
-        email_cell = sheet_arenda.cell(row=b, column=9)
-        if arendator_cell.value == "КОНТАКТЫ":
+        arendator_cell = sheet_arenda.cell(row=b, column=1) # Арендатор 
+        contract_cell = sheet_arenda.cell(row=b, column=2)  # Договор
+        debet_cell = sheet_arenda.cell(row=b, column=3) # Дебет
+        credit_cell = sheet_arenda.cell(row=b, column=4)    # Кредит
+        email_cell = sheet_arenda.cell(row=b, column=9) # E-mail
+        if arendator_cell.value == "КОНТАКТЫ":  # достигнут конец таблицы
             break
-        if (arendator_cell.value == None) or (arendator_cell.font.bold == True):
+        if (arendator_cell.value == None) or (arendator_cell.font.bold == True):    # пропускаем пустые и жирные(заголовки) строки
             continue
-        AMOUNT_ROW = AMOUNT_ROW + 1
+        AMOUNT_ROW = AMOUNT_ROW + 1 # счетчик обработанных позиций
         if contract_cell.value == None:
             arendator_without_contract.append(arendator_cell.value)
             continue
-        if debet_cell.fill == PatternFill(fill_type='solid', start_color='FFFFC0') or credit_cell.fill == PatternFill(fill_type='solid', start_color='FFFFC0'):
+        if debet_cell.fill == PatternFill(fill_type='solid', start_color='FFFFC0') or credit_cell.fill == PatternFill(fill_type='solid', start_color='FFFFC0'): # не обработанные строки (в талице выделены желтым)
             not_processed[arendator_cell.value] = contract_cell.value
         if debet_cell.value == None:
             if credit_cell.value == None:
                 continue
         if debet_cell.value > 0:
-            rt: list = []
-            rt.append(arendator_cell.value)
-            rt.append(contract_cell.value)
-            rt.append(debet_cell.value)
-            rt.append(email_cell.value)
+            rt: dict = {}
+            if AMOUNT_ROW not in rt:
+                rt[AMOUNT_ROW] = []
+            rt[AMOUNT_ROW].append(arendator_cell.value)
+            rt[AMOUNT_ROW].append(contract_cell.value)
+            rt[AMOUNT_ROW].append(debet_cell.value)
+            rt[AMOUNT_ROW].append(email_cell.value)
             result_table.append(rt)
-            total_debet = total_debet + round(debet_cell.value, 2)
+            total_debet = total_debet + debet_cell.value
         if credit_cell.value > 0:
-            total_credit = total_credit + round(credit_cell.value, 2)
+            total_credit = total_credit + credit_cell.value
         
 
     # AMOUNT_ROW_TOTAL = AMOUNT_A + len(arendator_without_contract) + len(not_processed)
@@ -265,6 +268,8 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     # # logging.info(f"Аредаторы с некорректными договорами: {incorrect_contracts}\n")
     logging.info(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
 
+    total_credit = int(total_credit)
+    total_debet = int(total_debet)
     query_params = {
         "arendator_without_contract": arendator_without_contract,
         "not_processed": not_processed,

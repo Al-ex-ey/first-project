@@ -8,6 +8,14 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     app_title: str = 'Project MH'
     database_url: str
+    POSTGRES_DB: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    PGADMIN_DEFAULT_EMAIL: str
+    PGADMIN_DEFAULT_PASSWORD: str
+    PGADMIN_CONFIG_SERVER_MODE: str
+    PGADMIN_LISTEN_ADDRESS: str
+    PGADMIN_LISTEN_PORT: int
 
     class Config:
         env_file = '.env'

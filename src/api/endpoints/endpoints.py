@@ -53,42 +53,10 @@ async def index(request: Request):
 async def result(request: Request):
     return templates.TemplateResponse("result.html", {"request": request})
 
-@router.get('/send_mail', response_class=HTMLResponse)
-async def result(request: Request):
-    return templates.TemplateResponse("send_mail.html", {"request": request})
-
-# @router.post('/mail')
-# async def send_mail():
-#     file = await template_processing(lessee, lease_contract_nomber, lease_contract_date)
-#     msg = EmailMessage()
-#     msg['Subject'] = MAIL_SUBJECT
-#     msg['From'] = MAIL_HOST
-#     msg['To'] = MAIL_TO
-#     msg['Cc'] = MAIL_CC
-#     msg.set_content(MAIL_TEXT)
-
-#     downloads_dir = BASE_DIR/"send_files"
-#     with open(downloads_dir/file, 'rb') as f:
-#         file_data = f.read()
-#     msg.add_attachment(file_data, maintype="application", subtype="application/pdf", filename=file)
-
-#     with smtplib.SMTP_SSL('smtp.mail.ru', MAIL_PORT) as smtp:
-#         smtp.login(MAIL_HOST, MAIL_PASSWORD)
-#         smtp.send_message(msg)
-
-#     # imap = imaplib.IMAP4('smtp.mail.ru', 143)                     # Подключаемся в почтовому серверу
-#     # imap.login(MAIL_HOST, MAIL_PASSWORD)                        # Логинимся в свой ящик
-#     # imap.select('Sent')                                       # Переходим в папку Исходящие
-#     # imap.append('Sent', None,                                 # Добавляем наше письмо в папку Исходящие
-#     #             imaplib.Time2Internaldate(time.time()),
-#     #             msg.as_bytes())
- 
-#     return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
-
 
 @router.get('/files', response_class=HTMLResponse)
-async def upload_load_files(request: Request):
-    return templates.TemplateResponse("upload_load_files.html", {"request": request})
+async def upload (request: Request):
+    return templates.TemplateResponse("upload_files.html", {"request": request})
 
 
 @router.post('/upload_files', response_class=HTMLResponse)
@@ -126,3 +94,47 @@ async def download_file():
             raise FileNotFoundError(f"File in '{downloads_dir}/Arenda_2024.xlsx' not found")
     else:
         return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
+    
+
+@router.get('/SendReminder', response_class=HTMLResponse)
+async def send_mail(request: Request):
+    return templates.TemplateResponse("Reminder_mail.html", {"request": request})
+
+
+@router.get('/mail', response_class=HTMLResponse)
+async def mail(request: Request):
+    return templates.TemplateResponse("mail.html", {"request": request})
+
+
+@router.get('/SendMessege', response_class=HTMLResponse)
+async def send_mail(request: Request):
+    return templates.TemplateResponse("Messege_mail.html", {"request": request})
+
+
+# @router.post('/send_mail')
+# async def send_mail():
+#     file = await template_processing(lessee, lease_contract_nomber, lease_contract_date)
+#     msg = EmailMessage()
+#     msg['Subject'] = MAIL_SUBJECT
+#     msg['From'] = MAIL_HOST
+#     msg['To'] = MAIL_TO
+#     msg['Cc'] = MAIL_CC
+#     msg.set_content(MAIL_TEXT)
+
+#     downloads_dir = BASE_DIR/"send_files"
+#     with open(downloads_dir/file, 'rb') as f:
+#         file_data = f.read()
+#     msg.add_attachment(file_data, maintype="application", subtype="application/pdf", filename=file)
+
+#     with smtplib.SMTP_SSL('smtp.mail.ru', MAIL_PORT) as smtp:
+#         smtp.login(MAIL_HOST, MAIL_PASSWORD)
+#         smtp.send_message(msg)
+
+#     # imap = imaplib.IMAP4('smtp.mail.ru', 143)                     # Подключаемся в почтовому серверу
+#     # imap.login(MAIL_HOST, MAIL_PASSWORD)                        # Логинимся в свой ящик
+#     # imap.select('Sent')                                       # Переходим в папку Исходящие
+#     # imap.append('Sent', None,                                 # Добавляем наше письмо в папку Исходящие
+#     #             imaplib.Time2Internaldate(time.time()),
+#     #             msg.as_bytes())
+ 
+#     return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)

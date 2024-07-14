@@ -9,17 +9,15 @@ class PreBase:
 
     @declared_attr
     def __tablename__(cls):
-        # Именем таблицы будет название модели в нижнем регистре.
         return cls.__name__.lower()
 
-    # Во все таблицы будет добавлено поле ID.
     id = Column(Integer, primary_key=True)
 
 Base = declarative_base(cls=PreBase)
 
 engine = create_async_engine(settings.database_url, echo=False)
 
-AsyncSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False, _class = AsyncSession)
+AsyncSessionLocal = async_sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False, _class = AsyncSession)
 
 # Асинхронный генератор сессий.
 async def get_async_session():
