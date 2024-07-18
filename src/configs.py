@@ -1,7 +1,5 @@
 import logging
 from src.constants import BASE_DIR, LOG_FORMAT, DT_FORMAT
-from fastapi.templating import Jinja2Templates
-# from fastapi.staticfiles import StaticFiles
 from pydantic_settings import BaseSettings
 
 
@@ -16,6 +14,8 @@ class Settings(BaseSettings):
     PGADMIN_CONFIG_SERVER_MODE: str
     PGADMIN_LISTEN_ADDRESS: str
     PGADMIN_LISTEN_PORT: int
+    PATH_TO_SETTINGS: str
+    PHONE_NAMBER: str
 
     class Config:
         env_file = '.env'
@@ -34,5 +34,3 @@ def configure_logging():
         level=logging.INFO,
         handlers=(logging.FileHandler(log_file, encoding='utf-8', mode="w"),)
     )
-
-

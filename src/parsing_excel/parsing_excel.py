@@ -5,7 +5,7 @@ import logging
 # import pandas as pd
 import datetime as dt
 import shutil
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 # from openpyxl.styles import PatternFill
@@ -210,9 +210,11 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     result_table: list = []
     total_credit: float = 0
     total_debet: float = 0
-
+    counter: int = 1
+    
     for b in range(1, AMOUNT_A_TOTAL):
     # for b in tqdm(sheet_arenda.iter_rows(min_row=1, max_col=10, max_row=AMOUNT_A_TOTAL), desc="Wait a going process"):
+        key_counter: str = f"key " + str(counter)
         arendator_cell = sheet_arenda.cell(row=b, column=1) # Арендатор 
         contract_cell = sheet_arenda.cell(row=b, column=2)  # Договор
         debet_cell = sheet_arenda.cell(row=b, column=3) # Дебет
@@ -233,12 +235,13 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
                 continue
         if debet_cell.value > 0:
             rt: dict = {}
-            if AMOUNT_ROW not in rt:
-                rt[AMOUNT_ROW] = []
-            rt[AMOUNT_ROW].append(arendator_cell.value)
-            rt[AMOUNT_ROW].append(contract_cell.value)
-            rt[AMOUNT_ROW].append(debet_cell.value)
-            rt[AMOUNT_ROW].append(email_cell.value)
+            if key_counter not in rt:
+                rt[key_counter] = []
+                counter = counter + 1
+            rt[key_counter].append(arendator_cell.value)
+            rt[key_counter].append(contract_cell.value)
+            rt[key_counter].append(debet_cell.value)
+            rt[key_counter].append(email_cell.value)
             result_table.append(rt)
             total_debet = total_debet + debet_cell.value
         if credit_cell.value > 0:

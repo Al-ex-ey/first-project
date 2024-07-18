@@ -34,7 +34,16 @@
                             <td>{{ value[1] }}</td>
                             <td>{{ value[2] }}</td>
                             <td>
-                                <a href=# class="btn btn-outline-danger btn-sm">SendReminder</a> | <a href="/send_mail?value={{ unit }}" class="btn btn-outline-danger btn-sm">SendMail</a> | <a href=# class="btn btn-outline-danger btn-sm">SendMessege</a>  
+                                <form action="/send_reminder/{{ key }}" method="post">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">SendReminder</button>
+                                </form>
+                                <form action="/send_mail/{{ key }}" method="post">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">SendMail</button>
+                                </form>
+                                <form action=# method="post">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">SendMessege</button>
+                                </form>
+                                <!-- <a href="/send_reminder/{{ key }}" class="btn btn-outline-danger btn-sm">SendReminder</a> | <a href="/send_mail?value={{ unit }}" class="btn btn-outline-danger btn-sm">SendMail</a> | <a href=# class="btn btn-outline-danger btn-sm">SendMessege</a>   -->
                             </td>
                         </tr>
                     {% endfor %}

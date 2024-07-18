@@ -4,20 +4,18 @@
 # from ssl import create_default_context
 # from email.mime.text import MIMEText
 import os
-import asyncio
-import smtplib
-import imaplib
-import time
-from email.message import EmailMessage
-from src.utils import template_processing
+import json
+# from email.message import EmailMessage
+# from src.utils import template_processing
+from fastapi.templating import Jinja2Templates
 from fastapi import APIRouter, FastAPI, Request, UploadFile, File, Form, status
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from .validators import load_validate
 import shutil
 import datetime as dt
 from src.parsing_excel.parsing_excel import parsing_excel 
-from src.utils import load_file
-from src.configs import *
+from src.utils import cache, get_dictionary_list_from_cashe, save_dictionary_list_to_cache, parse_keys_to_str, send_reminder
+from src.configs import configure_logging
 from src.constants import (
     AMOUNT_ROW,
     AMOUNT_A,
@@ -29,6 +27,13 @@ from src.constants import (
     DT_FORMAT,
     # MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD, MAIL_PORT, MAIL_TO, TEXT_REPLACEMENTS, MAIL_CC
 )
+from src.constants import PHONE_NAMBER 
+
+from urllib.parse import quote
+import pyautogui
+import time
+import  webbrowser
+
 
 templates = Jinja2Templates(directory="src/templates")
 
@@ -75,6 +80,9 @@ async def upload_files(files: list[UploadFile], request: Request):
 
     query_params = parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA_AMOUNT_ROW, DEBIT_AMOUNT_ROW)
 
+    result_table: list = query_params.get("result_table", [])
+    await save_dictionary_list_to_cache(cache_name="result_table", dictionary_list=result_table)
+
     path = BASE_DIR/"downloads"
     files_dir = os.listdir(path)
     if "Arenda_2024.xlsx" in files_dir:
@@ -101,10 +109,37 @@ async def mail(request: Request):
     return templates.TemplateResponse("mail.html", {"request": request})
 
 
-@router.post('/send_reminder', response_class=HTMLResponse)
-async def send_reminder(request: Request):
-    pass
+@router.post('/send_reminder/{key}', response_class=HTMLResponse)
+async def send_reminder(request: Request, key: str):
+    dictionary_list = await get_dictionary_list_from_cashe(cache_name="result_table")
+    if not dictionary_list or dictionary_list is None:
+        return HTMLResponse(content="Пользователь не найден")
+    selected_dict: dict = None
+    for i in dictionary_list:
+        if key == next(iter(i)):
+            selected_dict = i
+            break
 
+    if selected_dict:
+        arenator = selected_dict[key][0]
+        send_remainder_text = f"Тест: Сообщение отправлено через web project для {arenator}"
+        print(send_remainder_text)
+        return f"Сообщение отправлено"
+    else:
+        return f"Сообщение не отправлено"
+
+
+    # send_reminder(send_remainder_text)
+    
+    # send_remainder_text = quote(send_remainder_text)
+    # webbrowser.open(f"https://web.whatsapp.com/send?phone={PHONE_NAMBER}&text={send_remainder_text}")
+    # time.sleep(15)
+    # screen_width, screen_height = pyautogui.size()
+    # pyautogui.click(screen_width/2, screen_height/2)
+    # pyautogui.press("enter")
+    # time.sleep(2)
+    # pyautogui.hotkey("ctrl", "w")
+    # return status.HTTP_200_OK
 
 @router.post('/send_mail', response_class=HTMLResponse)
 async def mail(request: Request):
