@@ -109,11 +109,11 @@ async def mail(request: Request):
     return templates.TemplateResponse("mail.html", {"request": request})
 
 
-@router.post('/send_reminder/{key}', response_class=HTMLResponse)
+@router.get('/send_reminder/{key}', response_class=HTMLResponse)
 async def send_reminder(request: Request, key: str):
     dictionary_list = await get_dictionary_list_from_cashe(cache_name="result_table")
     if not dictionary_list or dictionary_list is None:
-        return HTMLResponse(content="Пользователь не найден")
+        return "Пользователь не найден"
     selected_dict: dict = None
     for i in dictionary_list:
         if key == next(iter(i)):
@@ -123,8 +123,8 @@ async def send_reminder(request: Request, key: str):
     if selected_dict:
         arenator = selected_dict[key][0]
         send_remainder_text = f"Тест: Сообщение отправлено через web project для {arenator}"
-        print(send_remainder_text)
-        return f"Сообщение отправлено"
+        # print(send_remainder_text)
+        return send_remainder_text
     else:
         return f"Сообщение не отправлено"
 

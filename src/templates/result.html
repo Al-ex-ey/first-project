@@ -34,20 +34,44 @@
                             <td>{{ value[1] }}</td>
                             <td>{{ value[2] }}</td>
                             <td>
-                                <form action="/send_reminder/{{ key }}" method="post">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">SendReminder</button>
-                                </form>
-                                <form action="/send_mail/{{ key }}" method="post">
+                                <button onclick="sendReminder('{{ key }}', this)" class="btn btn-outline-danger btn-sm">SendReminder</button>
+                                <div id="message"></div>
+                                <!-- <form action="/send_mail/{{ key }}" method="post">
                                     <button type="submit" class="btn btn-outline-danger btn-sm">SendMail</button>
                                 </form>
                                 <form action=# method="post">
                                     <button type="submit" class="btn btn-outline-danger btn-sm">SendMessege</button>
-                                </form>
-                                <!-- <a href="/send_reminder/{{ key }}" class="btn btn-outline-danger btn-sm">SendReminder</a> | <a href="/send_mail?value={{ unit }}" class="btn btn-outline-danger btn-sm">SendMail</a> | <a href=# class="btn btn-outline-danger btn-sm">SendMessege</a>   -->
+                                </form> -->
+                                
                             </td>
                         </tr>
                     {% endfor %}
-                {% endfor %}    
+                {% endfor %}
+                <script>
+                    function sendReminder(key, button) {
+                        button.disabled = true; // Делаем кнопку неактивной
+                        fetch(`/send_reminder/${key}`)
+                            .then(response => {
+                                if (response.ok) {
+                                    return response.text();
+                                } else {
+                                    throw new Error('Ошибка при отправке запроса');
+                                }
+                            })
+                            .then(data => {
+                                const message = button.nextElementSibling;
+                                message.innerText = data; // Обновить сообщение на странице
+                                setTimeout(() => {
+                                    message.innerText = ''; // Скрыть сообщение через 5 секунд
+                                    button.disabled = true; // Сделать кнопку постоянно неактивной
+                                }, 5000);
+                            })
+                            .catch(error => {
+                                alert(error.message); // Показать сообщение об ошибке
+                                button.disabled = true; // Сделать кнопку постоянно неактивной в случае ошибки
+                            });
+                    }
+                </script>
             </tbody>
         </table>
     </div>
