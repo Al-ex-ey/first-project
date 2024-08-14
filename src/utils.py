@@ -1,62 +1,162 @@
-# from fastapi import status
-# from selenium import webdriver
-# from selenium.webdriver.support import expected_conditions as EC
-# from selenium.webdriver.common.by import By
-# from selenium.webdriver.chrome.service import Service
-# from webdriver_manager.chrome import ChromeDriverManager
-# from selenium.webdriver.support.ui import WebDriverWait
-from fastapi import Request
-from urllib.parse import quote
+import datetime as dt
+import logging
 import pyautogui
+import re
+import smtplib
 import time
 import  webbrowser
+from enum import Enum
+from email.message import EmailMessage
+from fastapi import HTTPException, Request
+from pydantic import EmailStr, ValidationError
 from cachetools import TTLCache
-from src.constants import PATH_TO_SETTINGS
-from src.constants import PHONE_NAMBER 
+from urllib.parse import quote
+from src.constants import (
+    MAIL_PORT,
+    MAIL_PASSWORD,
+)
+from src.configs import configure_logging
 
-cache = TTLCache(maxsize=10, ttl=3000)
-
-def send_reminder(send_remainder_text):
-    # # настройки браузера для отправки сообщений через WhatsApp Web
-    # options = webdriver.ChromeOptions()
-    # options.add_argument('--allow-profiles-outside-user-dir')
-    # # options.add_argument('--allow-profiles-outside-user-dir') Эта строка добавляет аргумент --allow-profiles-outside-user-dir к настройкам браузера. Он указывает браузеру разрешить использование профилей пользователей вне рабочей директории пользователя.
-    # options.add_argument('--enable-profile-shortcut-manager')
-    # # options.add_argument('--enable-profile-shortcut-manager') Здесь добавляется аргумент --enable-profile-shortcut-manager к настройкам браузера. Он включает менеджер ярлыков профилей, который обеспечивает удобное управление профилями пользователей.
-    # options.add_argument(f'user-data-dir={PATH_TO_SETTINGS}') # Пример: r'user-data-dir=\Users\user\Desktop\test'
-    # # options.add_argument(r'user-data-dir=<Путь>') Эта строка добавляет аргумент user-data-dir, который задает путь к директории данных пользователя браузера. Вместо <Путь> вам нужно указать путь к желаемой директории. Это позволяет использовать предварительно настроенные профили или сохранять состояние браузера между запусками.
-    # options.add_argument('--profile-directory=Profile 1')
-    # # options.add_argument('--profile-directory=Profile 1') Здесь указывается аргумент --profile-directory, определяющий имя профиля, который будет использоваться в браузере. В данном случае, имя профиля установлено как "Profile 1".
-    # options.add_argument('--profiling-flush=n')
-    # # options.add_argument('--profiling-flush=n') Данная строка добавляет аргумент --profiling-flush к настройкам браузера. Он определяет, как часто происходит сброс данных профилирования. Здесь n представляет числовое значение, указывающее интервал сброса данных.
-    # options.add_argument('--enable-aggressive-domstorage-flushing')
-    # # options.add_argument('--enable-aggressive-domstorage-flushing') В данной строке добавляется аргумент --enable-aggressive-domstorage-flushing к настройкам браузера. Он включает агрессивную очистку хранилища DOM после каждого тестового случая, что может быть полезным при автоматизации тестирования.
-    # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    # wait = WebDriverWait(driver, 30)
-    
-    # отправка сообщения
-    send_remainder_text = quote(send_remainder_text)
-    webbrowser.open(f"https://web.whatsapp.com/send?phone={PHONE_NAMBER}&text={send_remainder_text}")
-    time.sleep(15)
-    screen_width, screen_height = pyautogui.size()
-    pyautogui.click(screen_width/2, screen_height/2)
-    pyautogui.press("enter")
-    time.sleep(3)
-    pyautogui.hotkey("win", "w")
-    # driver.get(url)
-    # wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[1]/div/div/div[5]/div/footer/div[1]/div/span[2]/div/div[2]/div[2]/button')))
-    # driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div[5]/div/footer/div[1]/div/span[2]/div/div[2]/div[2]/button').click()
+cache = TTLCache(maxsize=3, ttl=3000)
+configure_logging()
+now = dt.datetime.now()
 
 
-async def save_dictionary_list_to_cache(cache_name: str, dictionary_list: list):
+class Organizations(Enum):
+    PROSPEKTNEDVIGIMOST = "Проспект недвижимость"
+    KORPORACIA = "Корпорация"
+
+
+def is_valid_email(email: str) -> bool:
+    # Регулярное выражение для проверки формата электронной почты
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(email_pattern, email) is not None
+
+
+async def save_dictionary_list_to_cache(cache_name: str, dictionary_list: list | dict):
     cache[cache_name] = dictionary_list
-    return "Словарь сохранен в кэш"
+    return logging.info(f"___Словарь сохранен в кеш___")
 
 async def get_dictionary_list_from_cashe(cache_name: str):
     if cache_name in cache:
+        logging.info(f"___Запрос словаря из кеша___")
         return cache[cache_name]
     else:
-        return "Словарь не найден в кэше"
+        return logging.info(f"____Словарь в кеше не найден___")
+    
+
+async def info_validation(**kwargs):
+    if not kwargs:
+        logging.info(f"___Параметры не переданы___")
+        return HTTPException(status_code=400, detail="Параметры не переданы")
+    print (f"-----Параметры: ----------{kwargs}-----\n")
+    validation_info: dict = {}
+    for kwarg in kwargs:
+        validation_info[kwarg] = None
+
+    if 'phone_number' in kwargs:
+        phone_number = kwargs['phone_number']
+        if isinstance(phone_number, str):
+            # phone_pattern = re.compile(r'\+7\d{10}')
+            pattern = re.compile(r'\D')
+            c:str = re.sub(pattern, '', phone_number)
+            if len(c) >= 10:
+                number = c[-10:]
+                phone_number_re = f"+7{number}"
+                validation_info["phone_number"] = phone_number_re
+            #     else:
+        #         validation_info[phone_number] = None
+        # else:
+        #     validation_info[phone_number] = None
+
+
+    if 'send_remainder_text' in kwargs:
+        send_remainder_text = kwargs['send_remainder_text']
+        if isinstance(send_remainder_text, str):
+            validation_info["send_remainder_text"] = send_remainder_text
+        # else:
+        #     validation_info[send_remainder_text] = None
+
+    if 'email' in kwargs:
+        email: EmailStr | list[EmailStr] = kwargs['email']
+        print(f"-------- {email} ---------\n")
+        validation_info["email"] = email
+        print(f"-------- {validation_info.get('email')} ------{validation_info['email']}---\n")
+
+
+    if 'ul' in kwargs:
+        ul = kwargs['ul']
+        if isinstance(ul, str):
+            ul_list = await get_dictionary_list_from_cashe(cache_name="legal_entity")
+            if ul_list and ul_list is not None:
+                print(f" ------------ {ul_list} ------------------\n")
+                if ul in (org.value for org in Organizations):
+                    ul_name = Organizations(ul).name
+                    le: list = None 
+                    for key in ul_list.keys():
+                        if key == ul_name:
+                            le = ul_list[key]
+                    validation_info["ul"] = le
+
+
+    print (f"_____________ {validation_info} ________________\n")
+    return validation_info
+
+
+async def wa_message(send_remainder_text: str, phone_number: str):
+    send_remainder_text = quote(send_remainder_text)
+    # phone_pattern = re.compile(r'\+7\d{10}')
+    # if not re.search(phone_pattern, phone_number):
+    #     pattern = re.compile(r'\D')
+    #     c:str = re.sub(pattern, '', phone_number)
+    #     if len(c) < 10:
+    #         raise HTTPException(status_code=400, detail="Некорректный номер телефона")
+    #     nomber = c[-10:]
+    # phone_number_re = f"+7{nomber}"
+    # print(f"{phone_number_re}\n")
+    webbrowser.open(f"https://web.whatsapp.com/send?phone={phone_number}&text={send_remainder_text}")
+    time.sleep(15)
+    # screen_width, screen_height = pyautogui.size()
+    # pyautogui.click(screen_width/2, screen_height/2)
+    # pyautogui.press("enter")
+    time.sleep(2)
+    pyautogui.hotkey("ctrl", "w")
+    logging.info(f"___Напоминание отправлено на WhatsApp, на номер {phone_number}\n")
+    return 
+
+
+async def email_message(send_remainder_text: str, email: EmailStr | list[EmailStr], ul: list, arenator: str):
+    print(f"{email} --- {send_remainder_text} --- {ul} --- {arenator}\n")
+    # ul_list = await get_dictionary_list_from_cashe(cache_name="legal_entity")
+    # if not ul_list or ul_list is None:
+    #     raise "Организация не найдена"
+    # print(f" ------------ {ul_list} ------------------\n")
+    # try:
+    #     le_name = Organizations(ul).name
+    #     le = None 
+    #     for key in ul_list.keys():
+    #         if key == le_name:
+    #             le = ul_list[key]
+    #     if le is None:
+    #         raise logging.error(f"______Организация в списке не найдена")
+    # except Exception:
+    #     logging.error(f"______Организация в списке не найдена")
+    #     raise
+
+    msg = EmailMessage()
+    msg['Subject'] = f"Внимание! Напоминаю о задолженности по арендным платежам! {ul[0]} - {arenator}"
+    msg['From'] = ul[5]
+    msg['To'] = email
+    msg['Cc'] = ul[5]
+    msg.set_content(send_remainder_text)
+
+    with smtplib.SMTP_SSL('smtp.mail.ru', MAIL_PORT) as smtp:
+        smtp.login(ul[5], MAIL_PASSWORD)
+        smtp.send_message(msg)
+
+    logging.info(f"___Напоминание отправлено на эл. почту, для {arenator} от {ul[0]}\n")
+    return 
+
 
 # async def template_processing(lessee, lease_contract_nomber, lease_contract_date):
 #     document_templates_dir = BASE_DIR/"document_templates"
@@ -67,10 +167,3 @@ async def get_dictionary_list_from_cashe(cache_name: str):
 #     doc.render(TEXT_REPLACEMENTS)
 #     doc.save(document_output_dir/output_filename)
 #     return output_filename
-
-
-def parse_keys_to_str(initial_value):
-    if isinstance(initial_value, dict):
-        return {str(key):value for key,value in initial_value.items()}
-    return initial_value
-

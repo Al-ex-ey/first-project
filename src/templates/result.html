@@ -34,15 +34,8 @@
                             <td>{{ value[1] }}</td>
                             <td>{{ value[2] }}</td>
                             <td>
-                                <button onclick="sendReminder('{{ key }}', this)" class="btn btn-outline-danger btn-sm">SendReminder</button>
+                                <button onclick="sendReminder('{{ key }}', this)" class="btn btn-outline-danger btn-sm">Отправить напоминание</button>
                                 <div id="message"></div>
-                                <!-- <form action="/send_mail/{{ key }}" method="post">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">SendMail</button>
-                                </form>
-                                <form action=# method="post">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">SendMessege</button>
-                                </form> -->
-                                
                             </td>
                         </tr>
                     {% endfor %}
@@ -64,7 +57,7 @@
                                 setTimeout(() => {
                                     message.innerText = ''; // Скрыть сообщение через 5 секунд
                                     button.disabled = true; // Сделать кнопку постоянно неактивной
-                                }, 5000);
+                                }, 10000);
                             })
                             .catch(error => {
                                 alert(error.message); // Показать сообщение об ошибке

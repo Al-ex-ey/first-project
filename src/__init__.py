@@ -1,1 +1,1 @@
-from .models import Arenda  # noqa
+# from .models import Arenda  # noqa

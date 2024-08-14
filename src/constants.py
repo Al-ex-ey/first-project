@@ -28,11 +28,6 @@ MAIL_PORT = os.getenv("MAIL_PORT")
 MAIL_TO = os.getenv("MAIL_TO")
 MAIL_CC = os.getenv("MAIL_CC")
 
-""" Переменные chrome"""
-PATH_TO_SETTINGS = os.getenv("PATH_TO_SETTINGS")
-PHONE_NAMBER = os.getenv("PHONE_NAMBER")
-
-
 # TEXT_REPLACEMENTS = {
 #     "lessor_name": "АО «Проспект недвижимость»",
 #     "lessor_id": "ИНН 4401132298    ОГРН 1124401001867",
@@ -53,17 +48,34 @@ PHONE_NAMBER = os.getenv("PHONE_NAMBER")
 #     "director": "И.В. Синкина",
 # }
 
-KONSTRUKTIV_LESSOR = []
-KORPORACIA_LESSOR = []
-AKTIVODIN_LESSOR = []
-KVARTAL_LESSOR = []
-VENDEKS_LESSOR = []
-STRATEGIA_LESSOR = []
-RUSSKIYALANS_LESSOR = []
-PRESTIG_LESSOR = []
-IMPERATIV_LESSOR = []
-LEGAT_LESSOR = []
-RENTAPLUS_LESSOR = []
-TREPOVDE_LESSOR = []
-PROSPEKTNEDVIGIMOST_LESSOR = ["АО «Проспект недвижимость»", "ИНН 4401132298    ОГРН 1124401001867", "156016г. Кострома, м/р-н Давыдовский-2, д.41, кв.72", ]
-ARENDAPLUS_LESSOR = []
+LEGAL_ENTITY: list = {
+    "KONSTRUKTIV": [],
+    "KORPORACIA": [
+        "АО «Корпорация»",
+        "ИНН 0000000000",
+        "ОГРН 0000000000000",
+        "156000г. Кострома, ХХХХХХХХХХХХХХХХХХХ, д.ХХХ",
+        "Х.Х. Бывших",
+        "alexey01_01_0001@mail.ru",
+    ],
+    "AKTIV-1": [],
+    "KVARTAL": [],
+    "VENDEKS": [],
+    "STRATEGIA": [],
+    "RUSSKIY_ALIANS": [],
+    "PRESTIZH": [],
+    "IMPERATIV": [],
+    "LEGAT": [],
+    "RENTA_PLUS": [],
+    "TREPOV_D_E": [],
+    "PROSPEKT_NEDVIGIMOST": [
+        "АО «Проспект недвижимость»",
+        "ИНН 4401132298",
+        "ОГРН 1124401001867",
+        "156016г. Кострома, м/р-н Давыдовский-2, д.41, кв.72",
+        "И.В. Синкина",
+        "alexey01_01_0001@mail.ru",
+    ],
+    "ARENDA_PLUS": [],
+    "LIZHOLD": [],
+}
