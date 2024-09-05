@@ -12,21 +12,23 @@ LOG_FORMAT = '"%(asctime)s - [%(levelname)s] - %(message)s"'
 DT_FORMAT = '%d.%m.%Y %H:%M:%S'
 DATE_NOW = '%d.%m.%Y'
 
+
 """ Переменные parsing_excel"""
-AMOUNT_ROW = 0  # кол-во обработанных строк в файле с арендаторами - не пустые и не заголовки
-AMOUNT_A = 0  # кол-во обработанных арендаторов в файле с арендаторами
-AMOUNT_ROW_TOTAL = 0  # кол-во строк в файле с арендаторами
-AMOUNT_A_TOTAL = 0  # кол-во строк с арендаторами
-ARENDA_AMOUNT_ROW = 333  # примерное кол-во строк в файле Arenda 
-DEBIT_AMOUNT_ROW = 2900  # примерное кол-во строк в файле debet
+AMOUNT_ROW: int = 0  # кол-во обработанных строк в файле с арендаторами - не пустые и не заголовки
+AMOUNT_A: int = 0  # кол-во обработанных арендаторов в файле с арендаторами
+AMOUNT_ROW_TOTAL: int = 0  # кол-во строк в файле с арендаторами
+AMOUNT_A_TOTAL: int = 0  # кол-во строк с арендаторами
+ARENDA_AMOUNT_ROW: int = 333  # примерное кол-во строк в файле Arenda 
+DEBIT_AMOUNT_ROW: int = 2900  # примерное кол-во строк в файле debet
+
 
 """ Переменные mail"""
-# MAIL_HOST = os.getenv("MAIL_HOST")
-# MAIL_USERNAME = os.getenv("MAIL_USERNAME")
-# MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
-# MAIL_PORT = os.getenv("MAIL_PORT")
-# MAIL_TO = os.getenv("MAIL_TO")
-# MAIL_CC = os.getenv("MAIL_CC")
+MAIL_HOST = os.getenv("MAIL_HOST")
+MAIL_USERNAME = os.getenv("MAIL_USERNAME")
+MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
+MAIL_PORT = os.getenv("MAIL_PORT")
+MAIL_TO = os.getenv("MAIL_TO")
+MAIL_CC = os.getenv("MAIL_CC")
 
 # TEXT_REPLACEMENTS = {
 #     "lessor_name": "АО «Проспект недвижимость»",
@@ -48,17 +50,34 @@ DEBIT_AMOUNT_ROW = 2900  # примерное кол-во строк в файл
 #     "director": "И.В. Синкина",
 # }
 
-KONSTRUKTIV_LESSOR = []
-KORPORACIA_LESSOR = []
-AKTIVODIN_LESSOR = []
-KVARTAL_LESSOR = []
-VENDEKS_LESSOR = []
-STRATEGIA_LESSOR = []
-RUSSKIYALANS_LESSOR = []
-PRESTIG_LESSOR = []
-IMPERATIV_LESSOR = []
-LEGAT_LESSOR = []
-RENTAPLUS_LESSOR = []
-TREPOVDE_LESSOR = []
-PROSPEKTNEDVIGIMOST_LESSOR = ["АО «Проспект недвижимость»", "ИНН 4401132298    ОГРН 1124401001867", "156016г. Кострома, м/р-н Давыдовский-2, д.41, кв.72", ]
-ARENDAPLUS_LESSOR = []
+LEGAL_ENTITY: list = {
+    "KONSTRUKTIV": [],
+    "KORPORACIA": [
+        "АО «Корпорация»",
+        "ИНН 0000000000",
+        "ОГРН 0000000000000",
+        "156000г. Кострома, ХХХХХХХХХХХХХХХХХХХ, д.ХХХ",
+        "Х.Х. Бывших",
+        "alexey01_01_0001@mail.ru",
+    ],
+    "AKTIV-1": [],
+    "KVARTAL": [],
+    "VENDEKS": [],
+    "STRATEGIA": [],
+    "RUSSKIY_ALIANS": [],
+    "PRESTIZH": [],
+    "IMPERATIV": [],
+    "LEGAT": [],
+    "RENTA_PLUS": [],
+    "TREPOV_D_E": [],
+    "PROSPEKT_NEDVIGIMOST": [
+        "АО «Проспект недвижимость»",
+        "ИНН 4401132298",
+        "ОГРН 1124401001867",
+        "156016г. Кострома, м/р-н Давыдовский-2, д.41, кв.72",
+        "И.В. Синкина",
+        "alexey01_01_0001@mail.ru",
+    ],
+    "ARENDA_PLUS": [],
+    "LIZHOLD": [],
+}

@@ -2,12 +2,18 @@
 
 {% block content %}
 <h1>Result</h1>
-<h3> Обработанный файл: {{ query_params.file_name }} взятый из пути: {{ query_params.file_path }}</h3>
-<h3> Арендаторы без договоров: {{ query_params.arendator_without_contract }}</h3>
-<h3> Не обработанные арендаторы: {{ query_params.not_processed }}</h3>
-<h3> Общая сумма задолженности у арендаторов: {{ query_params.total_debet }}</h3>
-<h3> Общая сумма переплаты/обеспесительного плтежа у арендаторов: {{ query_params.total_credit }}</h3>
-<h6> result_table: {{ query_params.result_table }}</h6>
+<h5> Обработанный файл: {{ query_params.file_name }} взятый из пути: {{ query_params.file_path }}</h5>
+<h5> Арендаторы без договоров: {{ query_params.arendator_without_contract }}</h5>
+<h5> Не обработанные арендаторы: {{ query_params.not_processed }}</h5>
+<h5> Общая сумма задолженности у арендаторов: <span style="color: red;">{{ query_params.total_debet }}</span></h5>
+<h5> Общая сумма переплаты/обеспесительного плтежа у арендаторов: <span style="color: green;">{{ query_params.total_credit }}</span></h5    >
+
+<h6>result_table: </h6>
+<ul>
+{% for item in query_params.result_table %}
+    <li>{{ item }}</li>
+{% endfor %}
+</ul>
 
 <div class="row">
     <div class="col-12">
@@ -21,16 +27,44 @@
                 </tr>
             </thead>
             <tbody>
-                {% for unit in query_params.result_table %}
-                    <tr>
-                        <td>{{ unit[0] }}</td>
-                        <td>{{ unit[1] }}</td>
-                        <td>{{ unit[2] }}</td>
-                        <td>
-                            <a href=# class="btn btn-danger">SendReminder</a> | <a href="/send_mail?value={{ unit }}" class="btn btn-danger">SendMail</a> | <a href=# class="btn btn-danger">SendMessege</a>  
-                        </td>
-                    </tr>
-                {% endfor %}    
+                {% for items in query_params.result_table %}
+                    {% for key, value in items.items() %}
+                        <tr>
+                            <td>{{ value[0] }}</td>
+                            <td>{{ value[1] }}</td>
+                            <td>{{ value[2] }}</td>
+                            <td>
+                                <button onclick="sendReminder('{{ key }}', this)" class="btn btn-outline-danger btn-sm">Отправить напоминание</button>
+                                <div id="message"></div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+                <script>
+                    function sendReminder(key, button) {
+                        button.disabled = true; // Делаем кнопку неактивной
+                        fetch(`/send_reminder/${key}`)
+                            .then(response => {
+                                if (response.ok) {
+                                    return response.text();
+                                } else {
+                                    throw new Error('Ошибка при отправке запроса');
+                                }
+                            })
+                            .then(data => {
+                                const message = button.nextElementSibling;
+                                message.innerText = data; // Обновить сообщение на странице
+                                setTimeout(() => {
+                                    message.innerText = ''; // Скрыть сообщение через 5 секунд
+                                    button.disabled = true; // Сделать кнопку постоянно неактивной
+                                }, 10000);
+                            })
+                            .catch(error => {
+                                alert(error.message); // Показать сообщение об ошибке
+                                button.disabled = true; // Сделать кнопку постоянно неактивной в случае ошибки
+                            });
+                    }
+                </script>
             </tbody>
         </table>
     </div>

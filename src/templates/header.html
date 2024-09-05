@@ -8,32 +8,24 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="nav nav-pills">
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('index') }}">
-                Главная
-              </a>
+              <a class="nav-link" href="{{ url_for('index') }}">Главная</a>
             </li>
           </ul>
           <ul class="nav nav-pills">
             <li class="nav-item">
-              <form action="/mail" method="get">
-                <a class="nav-link" href="/files">Обновить данные</a>
-              </form>
+              <a class="nav-link" href="{{ url_for('upload') }}">Обновить данные</a>
             </li>
           </ul>
           <ul class="nav nav-pills">
             <li class="nav-item">
-              <form action="/download_file" method="get">
-                <button class="nav-link" input type="submit">Скачать</button>
-              </form>
+              <a class="nav-link" href="{{ url_for('download_file') }}">Скачать</a>
             </li>
           </ul>  
           <ul class="nav nav-pills">
             <li class="nav-item">
-              <form action="/mail" method="post">
-                <button class="nav-link" input type="submit">Отправить письмо</button>
-              </form>
+              <a class="nav-link" href="{{ url_for('mail') }}">Отпраить письмо</a>
             </li>
-        </ul>
+          </ul>
         </div>
       </div>
     </nav>

@@ -5,7 +5,7 @@ import logging
 # import pandas as pd
 import datetime as dt
 import shutil
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 # from openpyxl.styles import PatternFill
@@ -57,23 +57,29 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
                 arenda_dir = downloads_dir/"Arenda_2024.xlsx"
                 debet_dir = file_path
             else:
-                logging.ERROR(f"___{now.strftime(DT_FORMAT)}___There are no necessary files in the directory")
-                raise
+                logging.error(f"___There are no necessary files in the directory")
+                raise HTTPException(
+            status_code=404, detail="Ошибка ввода-вывода. Проверьте, что файл существует, не поврежден и внем есть страницы!"
+        )
     except Exception:
-        logging.ERROR(f"___{now.strftime(DT_FORMAT)}___Something went wrong when chose files")
-        raise
-    
+        logging.error(f"___Something went wrong when chose files")
+        raise HTTPException (
+            status_code=404, detail="Ошибка ввода-вывода. Проверьте, что файл не защищен от чтения, не поврежден!"
+        )
+         
     try:
         book_arenda = openpyxl.load_workbook(filename=arenda_dir)
         book_debet = openpyxl.load_workbook(filename=debet_dir)
     except (OSError, IOError):
-        logging.ERROR(f"___{now.strftime(DT_FORMAT)}___KeyError")
+        logging.error(f"___{now.strftime(DT_FORMAT)}___KeyError")
         raise HTTPException(
-            status_code=404, detail="Ошибка ввода-вывода. Tip: проверьте что файл существует или диск не заполнен!"
+            status_code=404, detail="Ошибка ввода-вывода. Проверьте, что файл существует, не поврежден и внем есть страницы!"
         )
     except Exception:
-        logging.ERROR(f"___{now.strftime(DT_FORMAT)}___Something went wrong when open and reed files")
-        raise
+        logging.error(f"___Something went wrong when open and reed files")
+        raise HTTPException(
+            status_code=404, detail="Ошибка ввода-вывода. Проверьте, что файл существует, не поврежден и внем есть страницы!"
+        )
 
     sheet_arenda = book_arenda.worksheets[-1]
     sheet_debet = book_debet.worksheets[0]
@@ -89,7 +95,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
         for i in reversed(column_list):
             sheet_debet.delete_cols(i)
     except:
-        logging.ERROR(f"___{now.strftime(DT_FORMAT)}___Something went wrong when delete columns")
+        logging.error(f"___Something went wrong when delete columns")
         raise
 
     try:
@@ -100,7 +106,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
                 sheet_debet.delete_rows(i, amount=2)
                 break
     except:
-        logging.ERROR(f"___{now.strftime(DT_FORMAT)}___Something went wrong when delete rows")
+        logging.error(f"___Something went wrong when delete rows")
         raise
 
     for a in range(1, ARENDA_AMOUNT_ROW):
@@ -112,31 +118,6 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
             continue
         new_sheet.cell(a, column=3, value='').fill = PatternFill(fill_type='solid', start_color='FFFFC0')
         new_sheet.cell(a, column=4, value='').fill = PatternFill(fill_type='solid', start_color='FFFFC0')
-        
-
-    # for a in range(1, ARENDA_AMOUNT_ROW):
-    #     arendator_cell = sheet_arenda.cell(row=a, column=1)
-    #     if arendator_cell.value == "КОНТАКТЫ":
-    #         break
-    #     AMOUNT_ROW_TOTAL = AMOUNT_ROW_TOTAL + 1
-    #     if (arendator_cell.value == None) or (arendator_cell.font.bold == True) or (arendator_cell.value in arendator_list):
-    #         continue
-    #     arendator_list.append(arendator_cell.value)
-
-    # for d in range(1, DEBIT_AMOUNT_ROW):
-    #     debit_arendator_cell = sheet_debet.cell(row=d, column=1)
-    #     if arendator_cell.value == "Итого":
-    #         break
-    #     if (debit_arendator_cell.value == None) or (debit_arendator_cell.alignment.indent > 0) or (debit_arendator_cell.value in arendator_debet_list):
-    #         continue
-    #     arendator_debet_list.append(debit_arendator_cell.value)
-
-    # for a in arendator_list:
-    #     for d in arendator_debet_list:
-    #         if a == d:
-    #             continue
-    #         if a not in arendator_debet_list and a not in arendators_not_in_debet_list:
-    #             arendators_not_in_debet_list.append(a)
 
     pattern = re.compile(r'\w+[\-|\.]?\w+')
 
@@ -198,6 +179,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     arendator_without_contract = []
     not_processed = {}
 
+    """ Проверка результата работы - Поиск необработанных позиций в только что созданом файле"""
     path = BASE_DIR/"downloads"
     files_dir = os.listdir(path)
     if "Arenda_2024.xlsx" in files_dir:
@@ -209,37 +191,48 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     result_table: list = []
     total_credit: float = 0
     total_debet: float = 0
-
-    for b in tqdm(range(1, AMOUNT_A_TOTAL), desc="Wait a going process"):
+    counter: int = 1
+    
+    for b in range(1, AMOUNT_A_TOTAL):
     # for b in tqdm(sheet_arenda.iter_rows(min_row=1, max_col=10, max_row=AMOUNT_A_TOTAL), desc="Wait a going process"):
-        arendator_cell = sheet_arenda.cell(row=b, column=1)
-        contract_cell = sheet_arenda.cell(row=b, column=2)
-        debet_cell = sheet_arenda.cell(row=b, column=3)
-        credit_cell = sheet_arenda.cell(row=b, column=4)
-        email_cell = sheet_arenda.cell(row=b, column=9)
-        if arendator_cell.value == "КОНТАКТЫ":
+        key_counter: str = f"key_" + str(counter)
+        arendator_cell = sheet_arenda.cell(row=b, column=1) # Арендатор 
+        contract_cell = sheet_arenda.cell(row=b, column=2)  # Договор
+        debet_cell = sheet_arenda.cell(row=b, column=3) # Дебет
+        credit_cell = sheet_arenda.cell(row=b, column=4)    # Кредит
+        email_cell = sheet_arenda.cell(row=b, column=9) # E-mail
+        phone_cell = sheet_arenda.cell(row=b, column=10) # Phone nomber
+
+        if arendator_cell.value == "КОНТАКТЫ":  # достигнут конец таблицы
             break
-        if (arendator_cell.value == None) or (arendator_cell.font.bold == True):
+        if arendator_cell.font.bold == True:
+            ul = arendator_cell.value
+        if (arendator_cell.value == None) or (arendator_cell.font.bold == True):    # пропускаем пустые и жирные(заголовки) строки
             continue
-        AMOUNT_ROW = AMOUNT_ROW + 1
+        AMOUNT_ROW = AMOUNT_ROW + 1 # счетчик обработанных позиций
         if contract_cell.value == None:
             arendator_without_contract.append(arendator_cell.value)
             continue
-        if debet_cell.fill == PatternFill(fill_type='solid', start_color='FFFFC0') or credit_cell.fill == PatternFill(fill_type='solid', start_color='FFFFC0'):
+        if debet_cell.fill == PatternFill(fill_type='solid', start_color='FFFFC0') or credit_cell.fill == PatternFill(fill_type='solid', start_color='FFFFC0'): # не обработанные строки (в талице выделены желтым)
             not_processed[arendator_cell.value] = contract_cell.value
         if debet_cell.value == None:
             if credit_cell.value == None:
                 continue
         if debet_cell.value > 0:
-            rt: list = []
-            rt.append(arendator_cell.value)
-            rt.append(contract_cell.value)
-            rt.append(debet_cell.value)
-            rt.append(email_cell.value)
+            rt: dict = {}
+            if key_counter not in rt:
+                rt[key_counter] = []
+                counter = counter + 1
+            rt[key_counter].append(arendator_cell.value)
+            rt[key_counter].append(contract_cell.value)
+            rt[key_counter].append(debet_cell.value)
+            rt[key_counter].append(email_cell.value)
+            rt[key_counter].append(phone_cell.value)
+            rt[key_counter].append(ul)
             result_table.append(rt)
-            total_debet = total_debet + round(debet_cell.value, 2)
+            total_debet = total_debet + debet_cell.value
         if credit_cell.value > 0:
-            total_credit = total_credit + round(credit_cell.value, 2)
+            total_credit = total_credit + credit_cell.value
         
 
     # AMOUNT_ROW_TOTAL = AMOUNT_A + len(arendator_without_contract) + len(not_processed)
@@ -265,6 +258,8 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     # # logging.info(f"Аредаторы с некорректными договорами: {incorrect_contracts}\n")
     logging.info(f"Обработанный файл с дебеторкой {file_name} в директории {file_path}\n")
 
+    total_credit = int(total_credit)
+    total_debet = int(total_debet)
     query_params = {
         "arendator_without_contract": arendator_without_contract,
         "not_processed": not_processed,

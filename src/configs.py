@@ -1,18 +1,28 @@
 import logging
 from src.constants import BASE_DIR, LOG_FORMAT, DT_FORMAT
-from fastapi.templating import Jinja2Templates
-# from fastapi.staticfiles import StaticFiles
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     app_title: str = 'Project MH'
-    database_url: str
-
+    # database_url: str
+    # POSTGRES_DB: str
+    # POSTGRES_USER: str
+    # POSTGRES_PASSWORD: str
+    # PGADMIN_DEFAULT_EMAIL: str
+    # PGADMIN_DEFAULT_PASSWORD: str
+    # PGADMIN_CONFIG_SERVER_MODE: str
+    # PGADMIN_LISTEN_ADDRESS: str
+    # PGADMIN_LISTEN_PORT: int
+    # PATH_TO_SETTINGS: str
+    # PHONE_NAMBER: str
+    # MAIL_PORT: int
+    # MAIL_PASSWORD: str
     class Config:
         env_file = '.env'
 
-settings = Settings() 
+settings = Settings()
+
 
 def configure_logging():
     log_dir = BASE_DIR / 'logs'
@@ -25,5 +35,3 @@ def configure_logging():
         level=logging.INFO,
         handlers=(logging.FileHandler(log_file, encoding='utf-8', mode="w"),)
     )
-
-

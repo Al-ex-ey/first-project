@@ -1,16 +1,17 @@
-from fastapi import FastAPI
-# from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, HTTPException
 from src.api.routers import main_router
-# from fastapi.templating import Jinja2Templates
+from .configs import settings
+from src.api.endpoints.error_handlers import http_exception_handler
 
+# import secrets
 
-app = FastAPI()
+app = FastAPI(title=settings.app_title)
+
+from fastapi.templating import Jinja2Templates
+
+# secret_key = secrets.token_hex(32)
+# app.add_middleware(SessionMiddleware, secret_key=secret_key)
+
 app.include_router(main_router)
 
-
-# app.get('/', response_class=HTMLResponse)
-# def index(request: Request):
-#     return templates.TemplateResponse("index.html", {"request": request})
-
-# if __name__ == "__main__":
-#     uvicorn.run("index:app", host='127.0.0.1', port=8000, reload=True)
+app.exception_handler(HTTPException)(http_exception_handler)

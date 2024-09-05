@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    .loading {
+        pointer-events: none; /* Отключаем взаимодействие */
+        opacity: 0.5; /* Делаем кнопку полупрозрачной */
+    }
+    .spinner {
+        display: none; /* Скрываем спиннер по умолчанию */
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top: 4px solid #007bff; /* Цвет спиннера */
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        margin-left: 10px; /* Отступ для спиннера */
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<div class="container mt-5">
+    <h3 class="center-align">Загрузите файлы</h3>
+    <div class="row">
+        <div class="col s12 m8 offset-m2">
+            <div class="card">
+                <div class="card-content">
+                    <form id="uploadForm" action="/upload_files/" enctype="multipart/form-data" method="post">
+                        <div class="input-field">
+                            <input name="files" type="file" multiple>
+                        </div>
+                        <div class="input-field">
+                            <input name="files" type="file" multiple>
+                        </div>
+                        <div class="card-action">
+                            <button class="btn btn-outline-primary" type="submit" id="submitButton">Отправить</button>
+                            <div class="spinner" id="spinner"></div> <!-- Спиннер добавлен здесь -->
+                        </div>
+                    </form>
+                    {% if error_message %}
+                        <div class="message {{ color }}">
+                            {{ error_message }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('uploadForm').onsubmit = function() {
+        var button = document.getElementById('submitButton');
+        var spinner = document.getElementById('spinner');
+
+        button.classList.add('loading'); // Добавляем класс для отключения кнопки
+        spinner.style.display = 'inline-block'; // Показываем спиннер
+    };
+</script>
+
+{% endblock %}
