@@ -1,24 +1,2 @@
-# MAIL_HOST = alexey01_01_0001@mail.ru
-# MAIL_USERNAME = alexey
-MAIL_PASSWORD = gMuZHpqk5ixCuGJ6D54Y
-MAIL_PORT = 465
-# MAIL_TO = a.chukvasov@yandex.ru
-# MAIL_CC = alexey01_01_0001@mail.ru
 
-# dialect+driver://username:password@host:port/database
-# DATABASE_URL = postgresql+asyncpg://postgres:334@127.0.0.1:5432/project_mh
-
-# database
-# POSTGRES_DB = project-mh
-# POSTGRES_USER = postgres
-# POSTGRES_PASSWORD = 334
-
-# pgadmin
-# PGADMIN_DEFAULT_EMAIL = admin@admin.com
-# PGADMIN_DEFAULT_PASSWORD = admin
-# PGADMIN_CONFIG_SERVER_MODE = 'False'
-# PGADMIN_LISTEN_ADDRESS = 0.0.0.0
-# PGADMIN_LISTEN_PORT = 5555
-
-Bot_user_id = 5568399786
 
