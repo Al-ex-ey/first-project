@@ -1,6 +1,8 @@
 venv/
 *.log
 .env
+.env.py
+env.txt
 logs/
 downloads/
 src/send_files
