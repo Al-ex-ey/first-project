@@ -16,8 +16,8 @@ class Settings(BaseSettings):
     # PGADMIN_LISTEN_PORT: int
     # PATH_TO_SETTINGS: str
     # PHONE_NAMBER: str
-    # MAIL_PORT: int
-    # MAIL_PASSWORD: str
+    MAIL_PORT: int
+    MAIL_PASSWORD: str
     class Config:
         env_file = '.env'
 
