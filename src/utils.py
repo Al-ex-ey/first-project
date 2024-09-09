@@ -1,6 +1,6 @@
 import datetime as dt
 import logging
-import pyautogui
+# import pyautogui
 import re
 import smtplib
 import time
@@ -49,7 +49,7 @@ async def info_validation(**kwargs):
     if not kwargs:
         logging.info(f"___Параметры не переданы___")
         return HTTPException(status_code=400, detail="Параметры не переданы")
-    print (f"-----Параметры: ----------{kwargs}-----\n")
+    # print (f"-----Параметры: ----------{kwargs}-----\n")
     validation_info: dict = {}
     for kwarg in kwargs:
         validation_info[kwarg] = None
@@ -79,9 +79,9 @@ async def info_validation(**kwargs):
 
     if 'email' in kwargs:
         email: EmailStr | list[EmailStr] = kwargs['email']
-        print(f"-------- {email} ---------\n")
+        # print(f"-------- {email} ---------\n")
         validation_info["email"] = email
-        print(f"-------- {validation_info.get('email')} ------{validation_info['email']}---\n")
+        # print(f"-------- {validation_info.get('email')} ------{validation_info['email']}---\n")
 
 
     if 'ul' in kwargs:
@@ -89,7 +89,7 @@ async def info_validation(**kwargs):
         if isinstance(ul, str):
             ul_list = await get_dictionary_list_from_cashe(cache_name="legal_entity")
             if ul_list and ul_list is not None:
-                print(f" ------------ {ul_list} ------------------\n")
+                # print(f" ------------ {ul_list} ------------------\n")
                 if ul in (org.value for org in Organizations):
                     ul_name = Organizations(ul).name
                     le: list = None 
@@ -99,34 +99,34 @@ async def info_validation(**kwargs):
                     validation_info["ul"] = le
 
 
-    print (f"_____________ {validation_info} ________________\n")
+    # print (f"_____________ {validation_info} ________________\n")
     return validation_info
 
 
-async def wa_message(send_remainder_text: str, phone_number: str):
-    send_remainder_text = quote(send_remainder_text)
-    # phone_pattern = re.compile(r'\+7\d{10}')
-    # if not re.search(phone_pattern, phone_number):
-    #     pattern = re.compile(r'\D')
-    #     c:str = re.sub(pattern, '', phone_number)
-    #     if len(c) < 10:
-    #         raise HTTPException(status_code=400, detail="Некорректный номер телефона")
-    #     nomber = c[-10:]
-    # phone_number_re = f"+7{nomber}"
-    # print(f"{phone_number_re}\n")
-    webbrowser.open(f"https://web.whatsapp.com/send?phone={phone_number}&text={send_remainder_text}")
-    time.sleep(15)
-    # screen_width, screen_height = pyautogui.size()
-    # pyautogui.click(screen_width/2, screen_height/2)
-    # pyautogui.press("enter")
-    time.sleep(2)
-    pyautogui.hotkey("ctrl", "w")
-    logging.info(f"___Напоминание отправлено на WhatsApp, на номер {phone_number}\n")
-    return 
+# async def wa_message(send_remainder_text: str, phone_number: str):
+#     send_remainder_text = quote(send_remainder_text)
+#     # phone_pattern = re.compile(r'\+7\d{10}')
+#     # if not re.search(phone_pattern, phone_number):
+#     #     pattern = re.compile(r'\D')
+#     #     c:str = re.sub(pattern, '', phone_number)
+#     #     if len(c) < 10:
+#     #         raise HTTPException(status_code=400, detail="Некорректный номер телефона")
+#     #     nomber = c[-10:]
+#     # phone_number_re = f"+7{nomber}"
+#     # print(f"{phone_number_re}\n")
+#     webbrowser.open(f"https://web.whatsapp.com/send?phone={phone_number}&text={send_remainder_text}")
+#     time.sleep(15)
+#     # screen_width, screen_height = pyautogui.size()
+#     # pyautogui.click(screen_width/2, screen_height/2)
+#     # pyautogui.press("enter")
+#     time.sleep(2)
+#     pyautogui.hotkey("ctrl", "w")
+#     logging.info(f"___Напоминание отправлено на WhatsApp, на номер {phone_number}\n")
+#     return 
 
 
 async def email_message(send_remainder_text: str, email: EmailStr | list[EmailStr], ul: list, arenator: str):
-    print(f"{email} --- {send_remainder_text} --- {ul} --- {arenator}\n")
+    # print(f"{email} --- {send_remainder_text} --- {ul} --- {arenator}\n")
     # ul_list = await get_dictionary_list_from_cashe(cache_name="legal_entity")
     # if not ul_list or ul_list is None:
     #     raise "Организация не найдена"

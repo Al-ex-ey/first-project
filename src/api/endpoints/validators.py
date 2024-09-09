@@ -14,7 +14,7 @@ def load_validate(files: list):
             status_code=403,
             detail="File upload failed: file not choised or does not fit .xlsx format!"   
         )
-        if file.size > 2000000:    
+        if file.size > 3000000:    
             raise HTTPException(
             status_code=403,
             detail="File upload failed: file size is very big!"

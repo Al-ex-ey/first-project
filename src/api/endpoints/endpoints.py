@@ -15,7 +15,14 @@ from .validators import load_validate
 import shutil
 import datetime as dt
 from src.parsing_excel.parsing_excel import parsing_excel 
-from src.utils import cache, get_dictionary_list_from_cashe, save_dictionary_list_to_cache, wa_message, email_message, info_validation
+from src.utils import (
+    cache,
+    get_dictionary_list_from_cashe,
+    save_dictionary_list_to_cache,
+    # wa_message,
+    email_message,
+    info_validation
+)
 from src.configs import configure_logging
 from src.constants import (
     AMOUNT_ROW,
@@ -126,12 +133,12 @@ async def send_reminder(request: Request, key: str):
     wa_mes = "Сообщение не отправлено"
     email_mes = "Сообщение не отправлено"
     if validation_info is not None:
-        if validation_info["send_remainder_text"] is not None and validation_info["phone_number"] is not None:
-            await wa_message(
-                send_remainder_text = validation_info["send_remainder_text"],
-                phone_number = validation_info["phone_number"],
-            )
-            wa_mes = "Сообщение отправлено"
+        # if validation_info["send_remainder_text"] is not None and validation_info["phone_number"] is not None:
+        #     await wa_message(
+        #         send_remainder_text = validation_info["send_remainder_text"],
+        #         phone_number = validation_info["phone_number"],
+        #     )
+        #     wa_mes = "Сообщение отправлено"
         if validation_info["send_remainder_text"] is not None and validation_info["ul"] is not None and validation_info["email"] is not None:
             await email_message(
                 send_remainder_text = validation_info["send_remainder_text"],

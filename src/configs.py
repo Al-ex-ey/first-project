@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     # database_url: str
     # POSTGRES_DB: str
     # POSTGRES_USER: str
-    # POSTGRES_PASSWORD: str
+    # POSTGRES_PASSWORD: str``
     # PGADMIN_DEFAULT_EMAIL: str
     # PGADMIN_DEFAULT_PASSWORD: str
     # PGADMIN_CONFIG_SERVER_MODE: str
