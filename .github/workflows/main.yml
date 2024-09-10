@@ -1,4 +1,4 @@
-name: Project-mh workflow_v2_try-004_add SSL_002
+name: Project-mh workflow_v2_try-005_add SSL_003
 
 on: 
   push:
@@ -80,6 +80,15 @@ jobs:
             # echo DB_HOST=${{ secrets.DB_HOST }} >> .env
             # echo DB_PORT=${{ secrets.DB_PORT }} >> .env
             # echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> .env
+
+            # Проверка наличия сертификатов
+            if [ ! -f /etc/letsencrypt/live/project-mh.ddns.net/fullchain.pem ]; then
+              echo "Сертификаты не найдены, получение сертификатов..."
+              sudo docker-compose run --rm certbot certonly --webroot --email ${{ secrets.EMAIL }} --agree-tos --no-eff-email -d project-mh.ddns.net -d www.project-mh.ddns.net --webroot-path=/var/www/certbot
+            else
+              echo "Сертификаты уже существуют, пропускаем получение."
+            fi
+
             sudo docker-compose up -d
 
   send_message:
