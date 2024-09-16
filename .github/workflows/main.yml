@@ -1,4 +1,4 @@
-name: Project-mh workflow_v2_try-011_add SSL_009
+name: Project-mh workflow_v2_try-012_add SSL_010
 
 on: 
   push:
@@ -65,16 +65,6 @@ jobs:
             sudo docker rmi certbot/certbot
             sudo docker image pull alexeysubudaev/project-mh
             sudo docker-compose up -d
-
-            # sleep 10
-
-            # # Проверка наличия сертификатов
-            # if [ ! -f /etc/letsencrypt/live/project-mh.ddns.net/fullchain.pem ]; then
-            #   echo "Сертификаты не найдены, получение сертификатов..."
-            #   sudo docker-compose run --rm certbot certonly --webroot --email ${{ secrets.EMAIL }} --agree-tos --no-eff-email -d project-mh.ddns.net -d www.project-mh.ddns.net --webroot-path=/var/www/certbot
-            # else
-            #   echo "Сертификаты уже существуют, пропускаем получение."
-            # fi
 
   send_message:
     runs-on: ubuntu-latest
