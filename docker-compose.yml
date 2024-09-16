@@ -33,7 +33,6 @@ services:
     depends_on:
       - init-dhparams
       - certbot-oneshot
-      - project-mh
     networks:
       - my_network
     volumes:
@@ -45,6 +44,9 @@ services:
     image: alexeysubudaev/project-mh
     container_name: project-mh
     restart: always
+    depends_on:
+      - init-dhparams
+      - certbot-oneshot
     networks:
       - my_network
     env_file:
