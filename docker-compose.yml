@@ -17,7 +17,7 @@ services:
     container_name: certbot-oneshot
     restart: "no"
     entrypoint: /bin/sh
-    command: -c 'test -d /etc/letsencrypt/live/project-mh.ddns.net || certbot certonly --standalone --register-unsafely-without-email -d "project-mh.ddns.net,www.project-mh.ddns.net" --rsa-key-size 2048 --agree-tos --force-renewal'
+    command: -c 'test -d /etc/letsencrypt/live/project-mh.ddns.net || certbot certonly --standalone --email subudaychik@gmail.com -d "project-mh.ddns.net,www.project-mh.ddns.net" --rsa-key-size 2048 --agree-tos --force-renewal'
     ports:
       - 80:80
     volumes:
