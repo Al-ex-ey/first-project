@@ -42,11 +42,11 @@ services:
       - cert_volume:/etc/letsencrypt:Z
       - acme_challenge:/usr/share/nginx/html/.well-known:Z
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost"]  # Проверка доступности Nginx
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 5
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]  # Проверка доступности Nginx
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   project-mh:
     image: alexeysubudaev/project-mh
