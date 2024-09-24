@@ -4,12 +4,11 @@
 # from ssl import create_default_context
 # from email.mime.text import MIMEText
 import os
-import json
 import logging
 # from email.message import EmailMessage
 # from src.utils import template_processing
 from fastapi.templating import Jinja2Templates
-from fastapi import APIRouter, FastAPI, Request, UploadFile, File, Form, status, HTTPException
+from fastapi import APIRouter, Depends, Request, UploadFile, status, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from .validators import load_validate
 import shutil
@@ -21,7 +20,9 @@ from src.utils import (
     save_dictionary_list_to_cache,
     # wa_message,
     email_message,
-    info_validation
+    info_validation,
+    verify_telegram_signature,
+    get_current_user,
 )
 from src.configs import configure_logging
 from src.constants import (
@@ -34,8 +35,8 @@ from src.constants import (
     DEBIT_AMOUNT_ROW,
     DT_FORMAT,
     LEGAL_ENTITY,
+    USER_ID,
     # MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD, MAIL_PORT, MAIL_TO, TEXT_REPLACEMENTS, MAIL_CC,
-
 )
 
 
@@ -45,23 +46,29 @@ configure_logging()
 
 router = APIRouter()
 
+
 @router.get('/', response_class=HTMLResponse)
-async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def index(request: Request, current_user: int = Depends(get_current_user)):
+    return templates.TemplateResponse("index.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/result', response_class=HTMLResponse)
-async def result(request: Request):
-    return templates.TemplateResponse("result.html", {"request": request})
+async def result(request: Request, current_user: int = Depends(get_current_user)):
+    return templates.TemplateResponse("result.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/files', response_class=HTMLResponse)
-async def upload (request: Request):
-    return templates.TemplateResponse("upload_files.html", {"request": request})
+async def upload (request: Request, current_user: int = Depends(get_current_user)):
+    return templates.TemplateResponse("upload_files.html", {"request": request, "user_id": current_user})
+
+
+@router.get('/login', response_class=HTMLResponse)
+async def login (request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
 
 
 @router.post('/upload_files', response_class=HTMLResponse)
-async def upload_files(files: list[UploadFile], request: Request, error_message: str = None):
+async def upload_files(files: list[UploadFile], request: Request, error_message: str = None, current_user: int = Depends(get_current_user)):
     load_validate(files)
     file_list = []
     for file in files:
@@ -92,7 +99,7 @@ async def upload_files(files: list[UploadFile], request: Request, error_message:
 
 
 @router.get('/download_file')
-async def download_file(request: Request):
+async def download_file(request: Request, current_user: int = Depends(get_current_user)):
     downloads_dir = BASE_DIR/"downloads"
     downloads_dir.mkdir(exist_ok=True)
     files_dir = os.listdir(downloads_dir)
@@ -106,8 +113,8 @@ async def download_file(request: Request):
 
 
 @router.get('/mail', response_class=HTMLResponse)
-async def mail(request: Request):
-    return templates.TemplateResponse("mail.html", {"request": request})
+async def mail(request: Request, current_user: int = Depends(get_current_user)):
+    return templates.TemplateResponse("mail.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/send_reminder/{key}', response_class=HTMLResponse)
@@ -160,6 +167,27 @@ async def mail(request: Request):
 @router.post('/send_messege', response_class=HTMLResponse)
 async def send_massege(request: Request):
     pass
+
+
+# Эндпоинт для обработки колбэка от Telegram
+@router.get("/auth/telegram/callback")
+async def telegram_callback(request: Request):
+    data = request.query_params._dict  # Получаем параметры запроса как словарь
+    if not verify_telegram_signature(data):
+        raise HTTPException(status_code=403, detail="Invalid hash")
+
+    user_id = int(data['id'])
+    
+    if user_id not in USER_ID:
+        raise HTTPException(status_code=403, detail="User not allowed")
+
+    # Сохранение user_id в кэше
+    await save_dictionary_list_to_cache(cache_name="user_cache", dictionary_list=user_id)
+    # Установка куки с user_id для дальнейшей аутентификации
+    response = RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(key="user_id", value=str(user_id), httponly=True)
+    return response
+
 
 
 # @router.post('/send_mail')

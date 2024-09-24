@@ -1,7 +1,10 @@
+import datetime as dt
 import os
+import json
+
 from pathlib import Path
 from dotenv import load_dotenv
-import datetime as dt
+
 
 load_dotenv()
 
@@ -29,6 +32,12 @@ MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
 MAIL_PORT = os.getenv("MAIL_PORT")
 MAIL_TO = os.getenv("MAIL_TO")
 MAIL_CC = os.getenv("MAIL_CC")
+
+
+""" Переменные auth"""
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ALLOWED_USER_IDS = json.loads(os.getenv("USER_IDS", "[]"))
+USER_ID = set(ALLOWED_USER_IDS)
 
 # TEXT_REPLACEMENTS = {
 #     "lessor_name": "АО «Проспект недвижимость»",

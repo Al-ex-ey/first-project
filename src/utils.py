@@ -1,5 +1,7 @@
 import datetime as dt
 import logging
+import hmac
+import hashlib
 # import pyautogui
 import re
 import smtplib
@@ -7,20 +9,23 @@ import time
 import  webbrowser
 from enum import Enum
 from email.message import EmailMessage
-from fastapi import HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, status
+from fastapi.responses import RedirectResponse
 from pydantic import EmailStr, ValidationError
 from cachetools import TTLCache
 from urllib.parse import quote
 from src.constants import (
     MAIL_PORT,
     MAIL_PASSWORD,
+    BOT_TOKEN,
 )
 from src.configs import configure_logging
 
-cache = TTLCache(maxsize=3, ttl=3000)
+cache = TTLCache(maxsize=3, ttl=3600)
 configure_logging()
 now = dt.datetime.now()
 
+router = APIRouter()
 
 class Organizations(Enum):
     PROSPEKTNEDVIGIMOST = "Проспект недвижимость"
@@ -167,3 +172,19 @@ async def email_message(send_remainder_text: str, email: EmailStr | list[EmailSt
 #     doc.render(TEXT_REPLACEMENTS)
 #     doc.save(document_output_dir/output_filename)
 #     return output_filename
+
+
+# Функция проверки подписи от Telegram
+def verify_telegram_signature(data: dict) -> bool:
+    hash_str = ''.join(f'{key}={value}\n' for key, value in sorted(data.items()) if key != 'hash')
+    computed_hash = hmac.new(BOT_TOKEN.encode(), hash_str.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(computed_hash, data['hash'])
+
+
+# Зависимость для проверки аутентификации
+async def get_current_user(request: Request):
+    user_id = request.cookies.get("user_id")  # Получаем user_id из куки
+    user_cache = await get_dictionary_list_from_cashe(cache_name="user_cache")
+    if user_id is None or int(user_id) not in user_cache:
+        return RedirectResponse(url=router.url_path_for("login"), status_code=status.HTTP_303_SEE_OTHER)
+    return int(user_id)
