@@ -186,5 +186,5 @@ async def get_current_user(request: Request):
     user_id = request.cookies.get("user_id")  # Получаем user_id из куки
     user_cache = await get_dictionary_list_from_cashe(cache_name="user_cache")
     if user_id is None or int(user_id) not in user_cache:
-        return RedirectResponse(url=router.url_path_for("login"), status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url=request.app.url_path_for("login"), status_code=status.HTTP_303_SEE_OTHER)
     return int(user_id)

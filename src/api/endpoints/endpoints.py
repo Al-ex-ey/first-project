@@ -62,7 +62,7 @@ async def upload (request: Request, current_user: int = Depends(get_current_user
     return templates.TemplateResponse("upload_files.html", {"request": request, "user_id": current_user})
 
 
-@router.get('/login', response_class=HTMLResponse)
+@router.get('/login', response_class=HTMLResponse, name='login')
 async def login (request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
