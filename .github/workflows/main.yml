@@ -1,4 +1,4 @@
-name: Project-mh workflow_v2_try-023_add authorization with telegram
+name: Project-mh workflow_v2_try-023_add_authorization_with_telegram
 
 on:
   push:
