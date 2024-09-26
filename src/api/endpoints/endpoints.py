@@ -14,7 +14,7 @@ from .validators import load_validate
 import shutil
 import datetime as dt
 from src.parsing_excel.parsing_excel import parsing_excel 
-from src.api.endpoints.utils import (
+from src.utils import (
     cache,
     get_dictionary_list_from_cashe,
     save_dictionary_list_to_cache,
@@ -22,7 +22,7 @@ from src.api.endpoints.utils import (
     email_message,
     info_validation,
     verify_telegram_signature,
-    get_current_user,
+    # get_current_user,
 )
 from src.configs import configure_logging
 from src.constants import (
@@ -47,28 +47,37 @@ configure_logging()
 router = APIRouter()
 
 
+# Зависимость для проверки аутентификации
+async def get_current_user(request: Request):
+    user_id = request.cookies.get("user_id")  # Получаем user_id из куки
+    user_cache = await get_dictionary_list_from_cashe(cache_name="user_cache")
+    if user_id is None or int(user_id) not in user_cache:
+        return RedirectResponse(url=router.url_path_for("t_auth"), status_code=status.HTTP_303_SEE_OTHER)
+    return int(user_id)
+
+
+@router.get('/t_auth', response_class=HTMLResponse)
+async def t_auth(request: Request):
+    return templates.TemplateResponse("t_auth.html", {"request": request})
+
+
 @router.get('/', response_class=HTMLResponse)
 async def index(request: Request, current_user: int = Depends(get_current_user)):
     return templates.TemplateResponse("index.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/result', response_class=HTMLResponse)
-async def result(request: Request, current_user: int = Depends(get_current_user)):
-    return templates.TemplateResponse("result.html", {"request": request, "user_id": current_user})
+async def result(request: Request):
+    return templates.TemplateResponse("result.html", {"request": request})
 
 
 @router.get('/files', response_class=HTMLResponse)
-async def upload (request: Request, current_user: int = Depends(get_current_user)):
-    return templates.TemplateResponse("upload_files.html", {"request": request, "user_id": current_user})
-
-
-@router.get('/login', response_class=HTMLResponse)
-async def login (request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+async def upload (request: Request):
+    return templates.TemplateResponse("upload_files.html", {"request": request})
 
 
 @router.post('/upload_files', response_class=HTMLResponse)
-async def upload_files(files: list[UploadFile], request: Request, error_message: str = None, current_user: int = Depends(get_current_user)):
+async def upload_files(files: list[UploadFile], request: Request, error_message: str = None):
     load_validate(files)
     file_list = []
     for file in files:
@@ -99,7 +108,7 @@ async def upload_files(files: list[UploadFile], request: Request, error_message:
 
 
 @router.get('/download_file')
-async def download_file(request: Request, current_user: int = Depends(get_current_user)):
+async def download_file(request: Request):
     downloads_dir = BASE_DIR/"downloads"
     downloads_dir.mkdir(exist_ok=True)
     files_dir = os.listdir(downloads_dir)
@@ -114,7 +123,7 @@ async def download_file(request: Request, current_user: int = Depends(get_curren
 
 @router.get('/mail', response_class=HTMLResponse)
 async def mail(request: Request, current_user: int = Depends(get_current_user)):
-    return templates.TemplateResponse("mail.html", {"request": request, "user_id": current_user})
+    return templates.TemplateResponse("mail.html", {"request": request})
 
 
 @router.get('/send_reminder/{key}', response_class=HTMLResponse)

@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     # PHONE_NAMBER: str
     MAIL_PORT: int
     MAIL_PASSWORD: str
+    USER_IDS: list
+    BOT_TOKEN: str
     class Config:
         env_file = '.env'
 
