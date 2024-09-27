@@ -11,6 +11,7 @@ from enum import Enum
 from email.message import EmailMessage
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import EmailStr, ValidationError
 from cachetools import TTLCache
 from urllib.parse import quote
@@ -20,6 +21,8 @@ from src.constants import (
     BOT_TOKEN,
 )
 from src.configs import configure_logging
+
+templates = Jinja2Templates(directory="src/templates")
 
 cache = TTLCache(maxsize=3, ttl=3600)
 configure_logging()
@@ -179,3 +182,12 @@ def verify_telegram_signature(data: dict) -> bool:
     hash_str = ''.join(f'{key}={value}\n' for key, value in sorted(data.items()) if key != 'hash')
     computed_hash = hmac.new(BOT_TOKEN.encode(), hash_str.encode(), hashlib.sha256).hexdigest()
     return hmac.compare_digest(computed_hash, data['hash'])
+
+
+# Зависимость для проверки аутентификации
+async def get_current_user(request: Request):
+    user_id = request.cookies.get("user_id")  # Получаем user_id из куки
+    user_cache = await get_dictionary_list_from_cashe(cache_name="user_cache")
+    if not user_id or user_id is None or int(user_id) not in user_cache:
+        return None
+    return int(user_id)

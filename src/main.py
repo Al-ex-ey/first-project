@@ -7,7 +7,7 @@ from src.api.endpoints.error_handlers import http_exception_handler
 
 app = FastAPI(title=settings.app_title)
 
-from fastapi.templating import Jinja2Templates
+# from fastapi.templating import Jinja2Templates
 
 # secret_key = secrets.token_hex(32)
 # app.add_middleware(SessionMiddleware, secret_key=secret_key)
