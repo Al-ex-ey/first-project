@@ -54,9 +54,9 @@ async def login(request: Request):
 
 @router.get('/', response_class=HTMLResponse)
 async def index(request: Request):
-    current_user = await get_current_user(request)
-    if current_user is None: 
-        return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
+    # current_user = await get_current_user(request)
+    # if current_user is None: 
+    #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     return templates.TemplateResponse("index.html", {"request": request})
 
 
@@ -123,6 +123,23 @@ async def download_file(request: Request):
             return FileResponse(f"{downloads_dir}/Arenda_2024.xlsx", media_type = "xlsx", filename="Arenda_2024.xlsx")
         except Exception as e:
             raise FileNotFoundError(f"File in '{downloads_dir}/Arenda_2024.xlsx' not found")
+    else:
+        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
+    
+    
+@router.get('/download_logs')
+async def download_logs(request: Request):
+    # current_user = await get_current_user(request)
+    # if current_user is None: 
+    #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
+    downloads_dir = BASE_DIR/"logs"
+    downloads_dir.mkdir(exist_ok=True)
+    files_dir = os.listdir(downloads_dir)
+    if "parsing_excel_log.log" in files_dir:
+        try:
+            return FileResponse(f"{downloads_dir}/parsing_excel_log.log", media_type = "log", filename="parsing_excel_log.log")
+        except Exception as e:
+            raise FileNotFoundError(f"File in '{downloads_dir}/parsing_excel_log.log' not found")
     else:
         return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
 
@@ -196,20 +213,20 @@ async def telegram_callback(request: Request):
     data = request.query_params._dict  # Получаем параметры запроса как словарь
     if not verify_telegram_signature(data):
         raise HTTPException(status_code=403, detail="Invalid hash")
-    print(f'==================================data==={data}==========================================\n')
+    logging.info(f'==================================data==={data}==========================================\n')
     user_id = int(data['id'])
-    print(f'=================================user_id==={user_id}=======================================\n')
+    logging.info(f'=================================user_id==={user_id}=======================================\n')
     if user_id not in USER_ID:
-        print(f'=================================USER_ID==={USER_ID}=======================================\n')
+        logging.info(f'=================================USER_ID==={USER_ID}=======================================\n')
         raise HTTPException(status_code=403, detail="User not allowed")
 
     # Сохранение user_id в кэше
     await save_dictionary_list_to_cache(cache_name="user_cache", dictionary_list=user_id)
-    print(f'=================================await get_dictionary_list_from_cashe(cache_name="user_cache")==={await get_dictionary_list_from_cashe(cache_name="user_cache")}=======================================\n')
+    logging.info(f'=================================await get_dictionary_list_from_cashe(cache_name="user_cache")==={await get_dictionary_list_from_cashe(cache_name="user_cache")}=======================================\n')
     # Установка куки с user_id для дальнейшей аутентификации
     response = RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="user_id", value=str(user_id), httponly=True)
-    print(f'=================================request.cookies.get("user_id")==={request.cookies.get("user_id")}=======================================\n')
+    logging.info(f'=================================request.cookies.get("user_id")==={request.cookies.get("user_id")}=======================================\n')
     return response
 
 
