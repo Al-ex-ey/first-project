@@ -36,7 +36,7 @@ class Organizations(Enum):
 
 
 def is_valid_email(email: str) -> bool:
-    # Регулярное выражение для проверки формата электронной почты
+    # проверка формата электронной почты
     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(email_pattern, email) is not None
 
@@ -57,7 +57,6 @@ async def info_validation(**kwargs):
     if not kwargs:
         logging.info(f"___Параметры не переданы___")
         return HTTPException(status_code=400, detail="Параметры не переданы")
-    # print (f"-----Параметры: ----------{kwargs}-----\n")
     validation_info: dict = {}
     for kwarg in kwargs:
         validation_info[kwarg] = None
@@ -72,32 +71,22 @@ async def info_validation(**kwargs):
                 number = c[-10:]
                 phone_number_re = f"+7{number}"
                 validation_info["phone_number"] = phone_number_re
-            #     else:
-        #         validation_info[phone_number] = None
-        # else:
-        #     validation_info[phone_number] = None
-
 
     if 'send_remainder_text' in kwargs:
         send_remainder_text = kwargs['send_remainder_text']
         if isinstance(send_remainder_text, str):
             validation_info["send_remainder_text"] = send_remainder_text
-        # else:
-        #     validation_info[send_remainder_text] = None
 
     if 'email' in kwargs:
         email: EmailStr | list[EmailStr] = kwargs['email']
         # print(f"-------- {email} ---------\n")
         validation_info["email"] = email
-        # print(f"-------- {validation_info.get('email')} ------{validation_info['email']}---\n")
-
 
     if 'ul' in kwargs:
         ul = kwargs['ul']
         if isinstance(ul, str):
             ul_list = await get_dictionary_list_from_cashe(cache_name="legal_entity")
             if ul_list and ul_list is not None:
-                # print(f" ------------ {ul_list} ------------------\n")
                 if ul in (org.value for org in Organizations):
                     ul_name = Organizations(ul).name
                     le: list = None 
@@ -106,8 +95,6 @@ async def info_validation(**kwargs):
                             le = ul_list[key]
                     validation_info["ul"] = le
 
-
-    # print (f"_____________ {validation_info} ________________\n")
     return validation_info
 
 
@@ -186,7 +173,8 @@ def verify_telegram_signature(data: dict) -> bool:
 
 # Зависимость для проверки аутентификации
 async def get_current_user(request: Request):
-    user_id = request.cookies.get("user_id")  # Получаем user_id из куки
+    # Получаем user_id из куки
+    user_id = request.cookies.get("user_id")  
     user_cache = await get_dictionary_list_from_cashe(cache_name="user_cache")
     if not user_id or user_id is None or int(user_id) not in user_cache:
         return None

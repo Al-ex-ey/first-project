@@ -62,16 +62,25 @@ async def index(request: Request):
 
 @router.get('/result', response_class=HTMLResponse)
 async def result(request: Request):
+    current_user = await get_current_user(request)
+    if current_user is None: 
+        return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     return templates.TemplateResponse("result.html", {"request": request})
 
 
 @router.get('/files', response_class=HTMLResponse)
 async def upload (request: Request):
+    current_user = await get_current_user(request)
+    if current_user is None: 
+        return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     return templates.TemplateResponse("upload_files.html", {"request": request})
 
 
 @router.post('/upload_files', response_class=HTMLResponse)
 async def upload_files(files: list[UploadFile], request: Request, error_message: str = None):
+    current_user = await get_current_user(request)
+    if current_user is None: 
+        return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     load_validate(files)
     file_list = []
     for file in files:
@@ -103,6 +112,9 @@ async def upload_files(files: list[UploadFile], request: Request, error_message:
 
 @router.get('/download_file')
 async def download_file(request: Request):
+    current_user = await get_current_user(request)
+    if current_user is None: 
+        return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     downloads_dir = BASE_DIR/"downloads"
     downloads_dir.mkdir(exist_ok=True)
     files_dir = os.listdir(downloads_dir)
@@ -117,11 +129,17 @@ async def download_file(request: Request):
 
 @router.get('/mail', response_class=HTMLResponse)
 async def mail(request: Request, current_user: int = Depends(get_current_user)):
+    current_user = await get_current_user(request)
+    if current_user is None: 
+        return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     return templates.TemplateResponse("mail.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/send_reminder/{key}', response_class=HTMLResponse)
 async def send_reminder(request: Request, key: str):
+    current_user = await get_current_user(request)
+    if current_user is None: 
+        return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     dictionary_list = await get_dictionary_list_from_cashe(cache_name="result_table")
     if not dictionary_list or dictionary_list is None:
         raise "Пользователь не найден"
