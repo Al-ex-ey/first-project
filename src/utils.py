@@ -79,7 +79,6 @@ async def info_validation(**kwargs):
 
     if 'email' in kwargs:
         email: EmailStr | list[EmailStr] = kwargs['email']
-        # print(f"-------- {email} ---------\n")
         validation_info["email"] = email
 
     if 'ul' in kwargs:

@@ -196,17 +196,20 @@ async def telegram_callback(request: Request):
     data = request.query_params._dict  # Получаем параметры запроса как словарь
     if not verify_telegram_signature(data):
         raise HTTPException(status_code=403, detail="Invalid hash")
-
+    print(f'==================================data==={data}==========================================\n')
     user_id = int(data['id'])
-    
+    print(f'=================================user_id==={user_id}=======================================\n')
     if user_id not in USER_ID:
+        print(f'=================================USER_ID==={USER_ID}=======================================\n')
         raise HTTPException(status_code=403, detail="User not allowed")
 
     # Сохранение user_id в кэше
     await save_dictionary_list_to_cache(cache_name="user_cache", dictionary_list=user_id)
+    print(f'=================================await get_dictionary_list_from_cashe(cache_name="user_cache")==={await get_dictionary_list_from_cashe(cache_name="user_cache")}=======================================\n')
     # Установка куки с user_id для дальнейшей аутентификации
     response = RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="user_id", value=str(user_id), httponly=True)
+    print(f'=================================request.cookies.get("user_id")==={request.cookies.get("user_id")}=======================================\n')
     return response
 
 
