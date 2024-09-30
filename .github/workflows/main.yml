@@ -1,10 +1,10 @@
-name: Project-mh workflow_v2_try-028_add_authorization_with_telegram
+name: Project-mh workflow_v2_try-029_add_auth_with_telegram
 
 on:
   push:
     branches:
       - main
-      # - Dev
+      - Dev
 
 jobs:
 
