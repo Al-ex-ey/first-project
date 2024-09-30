@@ -218,7 +218,8 @@ async def telegram_callback(request: Request):
     logging.info(f'=================================user_id==={user_id}=======================================\n')
     if user_id not in USER_ID:
         logging.info(f'=================================USER_ID==={USER_ID}=======================================\n')
-        templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_403_FORBIDDEN, detail="User not allowed")
+        # raise HTTPException(status_code=403, detail="User not allowed")
+        return RedirectResponse(url="/t_login", status_code=status.HTTP_303_SEE_OTHER)
 
     # Сохранение user_id в кэше
     await save_dictionary_list_to_cache(cache_name="user_cache", dictionary_list=user_id)
