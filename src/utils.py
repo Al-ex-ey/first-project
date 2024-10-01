@@ -166,10 +166,10 @@ async def email_message(send_remainder_text: str, email: EmailStr | list[EmailSt
 
 
 # Функция проверки подписи от Telegram
-def verify_telegram_signature(data: dict) -> bool:
-    hash_str = ''.join(f'{key}={value}\n' for key, value in sorted(data.items()) if key != 'hash')
-    computed_hash = hmac.new(BOT_TOKEN.encode(), hash_str.encode(), hashlib.sha256).hexdigest()
-    return hmac.compare_digest(computed_hash, data['hash'])
+# def verify_telegram_signature(data: dict) -> bool:
+#     hash_str = ''.join(f'{key}={value}\n' for key, value in sorted(data.items()) if key != 'hash')
+#     computed_hash = hmac.new(BOT_TOKEN.encode(), hash_str.encode(), hashlib.sha256).hexdigest()
+#     return hmac.compare_digest(computed_hash, data['hash'])
 
 
 # Зависимость для проверки аутентификации

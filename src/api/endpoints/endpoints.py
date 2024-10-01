@@ -5,6 +5,9 @@
 # from email.mime.text import MIMEText
 import os
 import logging
+import hmac
+import hashlib
+import urllib.parse
 # from email.message import EmailMessage
 # from src.utils import template_processing
 from fastapi.templating import Jinja2Templates
@@ -21,7 +24,7 @@ from src.utils import (
     # wa_message,
     email_message,
     info_validation,
-    verify_telegram_signature,
+    # verify_telegram_signature,
     get_current_user,
 )
 from src.configs import configure_logging
@@ -36,6 +39,7 @@ from src.constants import (
     DT_FORMAT,
     LEGAL_ENTITY,
     USER_ID,
+    BOT_TOKEN,
     # MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD, MAIL_PORT, MAIL_TO, TEXT_REPLACEMENTS, MAIL_CC,
 )
 
@@ -50,6 +54,13 @@ router = APIRouter()
 @router.get('/t_login', response_class=HTMLResponse)
 async def login(request: Request):
     return templates.TemplateResponse("t_login.html", {"request": request})
+
+
+@router.get("/logout")
+async def logout():
+    response = RedirectResponse(url="/login")
+    response.delete_cookie("user_id")
+    return response
 
 
 @router.get('/', response_class=HTMLResponse)
@@ -210,25 +221,58 @@ async def send_massege(request: Request):
 # Эндпоинт для обработки колбэка от Telegram
 @router.get("/auth/telegram/callback")
 async def telegram_callback(request: Request):
-    data = request.query_params._dict  # Получаем параметры запроса как словарь
-    if not verify_telegram_signature(data):
-        raise HTTPException(status_code=403, detail="Invalid hash")
-    logging.info(f'==================================data==={data}==========================================\n')
-    user_id = int(data['id'])
-    logging.info(f'=================================user_id==={user_id}=======================================\n')
-    if user_id not in USER_ID:
-        logging.info(f'=================================USER_ID==={USER_ID}=======================================\n')
-        # raise HTTPException(status_code=403, detail="User not allowed")
-        return RedirectResponse(url="/t_login", status_code=status.HTTP_303_SEE_OTHER)
+    # data = request.query_params._dict  # Получаем параметры запроса как словарь
+    # if not verify_telegram_signature(data):
+    #     raise HTTPException(status_code=403, detail="Invalid hash")
+    # logging.info(f'==================================data==={data}==========================================\n')
+    # user_id = int(data['id'])
+    # logging.info(f'=================================user_id==={user_id}=======================================\n')
+    # if user_id not in USER_ID:
+    #     logging.info(f'=================================USER_ID==={USER_ID}=======================================\n')
+    #     # raise HTTPException(status_code=403, detail="User not allowed")
+    #     return RedirectResponse(url="/t_login", status_code=status.HTTP_303_SEE_OTHER)
 
-    # Сохранение user_id в кэше
-    await save_dictionary_list_to_cache(cache_name="user_cache", dictionary_list=user_id)
-    logging.info(f'=================================await get_dictionary_list_from_cashe(cache_name="user_cache")==={await get_dictionary_list_from_cashe(cache_name="user_cache")}=======================================\n')
-    # Установка куки с user_id для дальнейшей аутентификации
-    response = RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
-    response.set_cookie(key="user_id", value=str(user_id), httponly=True)
-    logging.info(f'=================================request.cookies.get("user_id")==={request.cookies.get("user_id")}=======================================\n')
-    return response
+    # # Сохранение user_id в кэше
+    # await save_dictionary_list_to_cache(cache_name="user_cache", dictionary_list=user_id)
+    # logging.info(f'=================================await get_dictionary_list_from_cashe(cache_name="user_cache")==={await get_dictionary_list_from_cashe(cache_name="user_cache")}=======================================\n')
+    # # Установка куки с user_id для дальнейшей аутентификации
+    # response = RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
+    # response.set_cookie(key="user_id", value=str(user_id), httponly=True)
+    # logging.info(f'=================================request.cookies.get("user_id")==={request.cookies.get("user_id")}=======================================\n')
+    # return response
+    # Получаем данные из запроса
+    data = request.query_params
+    hash = data.get("hash")
+    
+    # Удаляем параметр hash из данных для проверки
+    data_without_hash = data.copy()
+    data_without_hash.pop("hash")
+    
+    # Сортируем параметры по ключам
+    sorted_data = sorted(data_without_hash.items())
+    
+    # Создаем строку для проверки
+    check_string = '\n'.join(f"{key}={value}" for key, value in sorted_data)
+    
+    # Получаем токен бота из переменных окружения
+    bot_token = BOT_TOKEN
+    
+    # Создаем подпись
+    secret_key = hashlib.sha256(bot_token.encode()).digest()
+    generated_hash = hmac.new(secret_key, check_string.encode(), hashlib.sha256).hexdigest()
+    
+    # Сравниваем хеши
+    if generated_hash != hash:
+        raise HTTPException(status_code=403, detail="Invalid hash")
+    
+    # Проверяем user_id
+    user_id = data.get("id")
+    if user_id and int(user_id) in USER_ID:
+        response = RedirectResponse(url="/")
+        response.set_cookie(key="user_id", value=user_id)
+        return response
+    else:
+        return RedirectResponse(url="/t_login")
 
 
 
