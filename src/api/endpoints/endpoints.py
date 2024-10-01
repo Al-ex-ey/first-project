@@ -89,7 +89,11 @@ async def upload (request: Request):
 
 @router.post('/upload_files', response_class=HTMLResponse)
 async def upload_files(files: list[UploadFile], request: Request, error_message: str = None):
-    await get_current_user(request)
+    try:
+        await get_current_user(request)
+    except HTTPException:
+        return RedirectResponse(url="/login")
+        
     # if current_user is None: 
     #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     load_validate(files)
