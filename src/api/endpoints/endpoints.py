@@ -245,8 +245,8 @@ async def telegram_callback(request: Request):
     hash = data.get("hash")
     
     # Удаляем параметр hash из данных для проверки
-    data_without_hash = data.copy()
-    data_without_hash.pop("hash")
+    data_without_hash = dict(data)  # Используем dict() вместо copy()
+    data_without_hash.pop("hash", None)  # Удаляем hash, если он существует
     
     # Сортируем параметры по ключам
     sorted_data = sorted(data_without_hash.items())
