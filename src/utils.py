@@ -18,7 +18,7 @@ from urllib.parse import quote
 from src.constants import (
     MAIL_PORT,
     MAIL_PASSWORD,
-    BOT_TOKEN,
+    # BOT_TOKEN,
 )
 from src.configs import configure_logging
 
@@ -30,7 +30,7 @@ now = dt.datetime.now()
 
 router = APIRouter()
 
-BOT_TOKEN_HASH = hashlib.sha256(BOT_TOKEN.encode()).hexdigest()
+# BOT_TOKEN_HASH = hashlib.sha256(BOT_TOKEN.encode()).hexdigest()
 
 class Organizations(Enum):
     PROSPEKTNEDVIGIMOST = "Проспект недвижимость"

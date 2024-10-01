@@ -36,8 +36,9 @@ MAIL_CC = os.getenv("MAIL_CC")
 
 """ Переменные auth"""
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ALLOWED_USER_IDS = json.loads(os.getenv("USER_IDS", "[]"))
-USER_ID = set(ALLOWED_USER_IDS)
+# ALLOWED_USER_IDS = json.loads(os.getenv("USER_IDS", "[]"))
+# USER_ID = set(ALLOWED_USER_IDS)
+ALLOWED_USER_IDS = list(map(int, os.getenv("USER_IDS").split(',')))
 
 # TEXT_REPLACEMENTS = {
 #     "lessor_name": "АО «Проспект недвижимость»",

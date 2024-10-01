@@ -38,7 +38,7 @@ from src.constants import (
     DEBIT_AMOUNT_ROW,
     DT_FORMAT,
     LEGAL_ENTITY,
-    USER_ID,
+    ALLOWED_USER_IDS,
     BOT_TOKEN,
     # MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD, MAIL_PORT, MAIL_TO, TEXT_REPLACEMENTS, MAIL_CC,
 )
@@ -275,7 +275,7 @@ async def telegram_callback(request: Request):
     # Проверяем user_id
     user_id = data.get("id")
     logging.info(f"==================================== user_id ==={user_id}=======================================\n")
-    if user_id and int(user_id) in USER_ID:
+    if user_id and int(user_id) in ALLOWED_USER_IDS:
         response = RedirectResponse(url="/")
         response.set_cookie(key="user_id", value=user_id)
         return response
