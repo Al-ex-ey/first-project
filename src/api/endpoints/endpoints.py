@@ -242,11 +242,14 @@ async def telegram_callback(request: Request):
     # return response
     # Получаем данные из запроса
     data = request.query_params
+    logging.info(f"==================================== data ==={data}=======================================\n")
     hash = data.get("hash")
     
     # Удаляем параметр hash из данных для проверки
     data_without_hash = dict(data)  # Используем dict() вместо copy()
     data_without_hash.pop("hash", None)  # Удаляем hash, если он существует
+    logging.info(f"==================================== data_without_hash ==={data_without_hash}=======================================\n")
+    logging.info(f"==================================== data_without_hash ==={data_without_hash}=======================================\n")
     
     # Сортируем параметры по ключам
     sorted_data = sorted(data_without_hash.items())
@@ -267,6 +270,7 @@ async def telegram_callback(request: Request):
     
     # Проверяем user_id
     user_id = data.get("id")
+    logging.info(f"==================================== user_id ==={user_id}=======================================\n")
     if user_id and int(user_id) in USER_ID:
         response = RedirectResponse(url="/")
         response.set_cookie(key="user_id", value=user_id)
