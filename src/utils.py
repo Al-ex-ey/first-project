@@ -178,5 +178,5 @@ async def get_current_user(request: Request):
     user_id = request.cookies.get("user_id")  
     user_cache = await get_dictionary_list_from_cashe(cache_name="user_cache")
     if not user_id or user_id is None or int(user_id) not in user_cache:
-        return None
+        raise HTTPException(status_code=403, detail="Not authorized")
     return int(user_id)
