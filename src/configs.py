@@ -1,10 +1,10 @@
 import logging
 from src.constants import BASE_DIR, LOG_FORMAT, DT_FORMAT
 from pydantic_settings import BaseSettings
-
+from typing import List
 
 class Settings(BaseSettings):
-    app_title: str = 'Project MH'
+    app_title: str = 'Project mh'
     # database_url: str
     # POSTGRES_DB: str
     # POSTGRES_USER: str
@@ -16,12 +16,19 @@ class Settings(BaseSettings):
     # PGADMIN_LISTEN_PORT: int
     # PATH_TO_SETTINGS: str
     # PHONE_NAMBER: str
-    MAIL_PORT: int
-    MAIL_PASSWORD: str
-    USER_IDS: list
-    BOT_TOKEN: str
+    mail_port: int
+    mail_password: str
+    user_ids: List[int]
+    bot_token: str
+    # domain: str
+    
+    @property
+    def allowed_user_ids(self) -> List[int]:
+        return [int(user_id) for user_id in self.user_ids]
+    
     class Config:
         env_file = '.env'
+        env_prefix = ""
 
 settings = Settings()
 

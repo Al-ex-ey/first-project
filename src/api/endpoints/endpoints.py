@@ -25,9 +25,9 @@ from src.utils import (
     email_message,
     info_validation,
     # verify_telegram_signature,
-    get_current_user,
+    # get_current_user,
 )
-from src.configs import configure_logging
+from src.configs import configure_logging, settings
 from src.constants import (
     AMOUNT_ROW,
     AMOUNT_A,
@@ -38,8 +38,6 @@ from src.constants import (
     DEBIT_AMOUNT_ROW,
     DT_FORMAT,
     LEGAL_ENTITY,
-    ALLOWED_USER_IDS,
-    BOT_TOKEN,
     # MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD, MAIL_PORT, MAIL_TO, TEXT_REPLACEMENTS, MAIL_CC,
 )
 
@@ -49,6 +47,37 @@ templates = Jinja2Templates(directory="src/templates")
 configure_logging()
 
 router = APIRouter()
+
+
+def check_signature(data: dict, token: str) -> bool:
+    # Получаем строку для проверки подписи
+    string_to_check = f"{data['id']}_{data['first_name']}_{data['last_name']}_{data['username']}_{data['auth_date']}_{token}"
+    
+    # Создаем подпись
+    signature = hmac.new(token.encode(), string_to_check.encode(), hashlib.sha256).hexdigest()
+    
+    # Сравниваем подпись
+    return signature == data.get("hash")
+
+
+# Зависимость для проверки аутентификации
+# async def get_current_user(request: Request):
+#     user_id = request.cookies.get("user_id")
+#     logging.info(f"==================================== user_id ==={user_id}=======================================\n")
+#     user_cache = await get_dictionary_list_from_cashe(cache_name="user_cache")
+#     logging.info(f"==================================== user_cache ==={user_cache}=======================================\n")
+#     if not user_id or user_id is None or int(user_id) not in user_cache:
+#         raise HTTPException(status_code=403, detail="Not authorized")
+#     return int(user_id)
+
+async def get_current_user(request: Request):
+    user_id = await get_dictionary_list_from_cashe("user_id")
+    
+    if user_id is None or int(user_id) not in settings.allowed_user_ids:
+        logging.warning("Unauthorized access attempt")
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    return int(user_id)
 
 
 @router.get('/t_login', response_class=HTMLResponse)
@@ -64,11 +93,8 @@ async def logout():
 
 
 @router.get('/', response_class=HTMLResponse)
-async def index(request: Request):
-    # current_user = await get_current_user(request)
-    # if current_user is None: 
-    #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
-    return templates.TemplateResponse("index.html", {"request": request})
+async def index(request: Request, current_user: int = Depends(get_current_user)):
+    return templates.TemplateResponse("index.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/result', response_class=HTMLResponse)
@@ -225,6 +251,22 @@ async def send_massege(request: Request):
 # Эндпоинт для обработки колбэка от Telegram
 @router.get("/auth/telegram/callback")
 async def telegram_callback(request: Request):
+    data = request.query_params
+    token = settings.bot_token
+    logging.info(f"==================================== data === {data} =======================================\n")
+    # Проверка подписи
+    if not check_signature(data, token):
+        raise HTTPException(status_code=403, detail="Invalid signature")
+    user_id = data.get("id")
+    if user_id and int(user_id) in settings.allowed_user_ids:
+        await save_dictionary_list_to_cache("user_id", user_id)  # Сохраняем user_id в кэш
+        response = RedirectResponse(url="/")
+        # response.set_cookie(key="user_id", value=user_id)
+        return response
+    else:
+        raise HTTPException(status_code=403, detail="Unauthorized access")
+    
+    
     # data = request.query_params._dict  # Получаем параметры запроса как словарь
     # if not verify_telegram_signature(data):
     #     raise HTTPException(status_code=403, detail="Invalid hash")
@@ -245,42 +287,39 @@ async def telegram_callback(request: Request):
     # logging.info(f'=================================request.cookies.get("user_id")==={request.cookies.get("user_id")}=======================================\n')
     # return response
     # Получаем данные из запроса
-    data = request.query_params
-    logging.info(f"==================================== data ==={data}=======================================\n")
-    hash = data.get("hash")
+
     
-    # Удаляем параметр hash из данных для проверки
-    data_without_hash = dict(data)  # Используем dict() вместо copy()
-    data_without_hash.pop("hash", None)  # Удаляем hash, если он существует
-    logging.info(f"==================================== data_without_hash ==={data_without_hash}=======================================\n")
-    logging.info(f"==================================== data_without_hash ==={data_without_hash}=======================================\n")
+    # hash = data.get("hash")
     
-    # Сортируем параметры по ключам
-    sorted_data = sorted(data_without_hash.items())
+    # # Удаляем параметр hash из данных для проверки
+    # data_without_hash = dict(data)  # Используем dict() вместо copy()
+    # data_without_hash.pop("hash", None)  # Удаляем hash, если он существует
+    # logging.info(f"==================================== data_without_hash ==={data_without_hash}=======================================\n")
+    # logging.info(f"==================================== data_without_hash ==={data_without_hash}=======================================\n")
     
-    # Создаем строку для проверки
-    check_string = '\n'.join(f"{key}={value}" for key, value in sorted_data)
+    # # Сортируем параметры по ключам
+    # sorted_data = sorted(data_without_hash.items())
     
-    # Получаем токен бота из переменных окружения
-    bot_token = BOT_TOKEN
+    # # Создаем строку для проверки
+    # check_string = '\n'.join(f"{key}={value}" for key, value in sorted_data)
     
-    # Создаем подпись
-    secret_key = hashlib.sha256(bot_token.encode()).digest()
-    generated_hash = hmac.new(secret_key, check_string.encode(), hashlib.sha256).hexdigest()
+    # # Создаем подпись
+    # secret_key = hashlib.sha256(token.encode()).digest()
+    # generated_hash = hmac.new(secret_key, check_string.encode(), hashlib.sha256).hexdigest()
     
-    # Сравниваем хеши
-    if generated_hash != hash:
-        raise HTTPException(status_code=403, detail="Invalid hash")
+    # # Сравниваем хеши
+    # if generated_hash != hash:
+    #     raise HTTPException(status_code=403, detail="Invalid hash")
     
-    # Проверяем user_id
-    user_id = data.get("id")
-    logging.info(f"==================================== user_id ==={user_id}=======================================\n")
-    if user_id and int(user_id) in ALLOWED_USER_IDS:
-        response = RedirectResponse(url="/")
-        response.set_cookie(key="user_id", value=user_id)
-        return response
-    else:
-        return RedirectResponse(url="/t_login")
+    ## Проверяем user_id
+    # user_id = data.get("id")
+    # logging.info(f"==================================== user_id ==={user_id}=======================================\n")
+    # if user_id and int(user_id) in ALLOWED_USER_IDS:
+    #     response = RedirectResponse(url="/")
+    #     response.set_cookie(key="user_id", value=user_id)
+    #     return response
+    # else:
+    #     return RedirectResponse(url="/t_login")
 
 
 

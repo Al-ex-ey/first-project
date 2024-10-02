@@ -173,11 +173,11 @@ async def email_message(send_remainder_text: str, email: EmailStr | list[EmailSt
 
 
 # Зависимость для проверки аутентификации
-async def get_current_user(request: Request):
-    user_id = request.cookies.get("user_id")
-    logging.info(f"==================================== user_id ==={user_id}=======================================\n")
-    user_cache = await get_dictionary_list_from_cashe(cache_name="user_cache")
-    logging.info(f"==================================== user_cache ==={user_cache}=======================================\n")
-    if not user_id or user_id is None or int(user_id) not in user_cache:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    return int(user_id)
+# async def get_current_user(request: Request):
+#     user_id = request.cookies.get("user_id")
+#     logging.info(f"==================================== user_id ==={user_id}=======================================\n")
+#     user_cache = await get_dictionary_list_from_cashe(cache_name="user_cache")
+#     logging.info(f"==================================== user_cache ==={user_cache}=======================================\n")
+#     if not user_id or user_id is None or int(user_id) not in user_cache:
+#         raise HTTPException(status_code=403, detail="Not authorized")
+#     return int(user_id)
