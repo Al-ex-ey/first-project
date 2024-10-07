@@ -257,15 +257,19 @@ async def send_massege(request: Request):
 @router.get("/auth/telegram/callback")
 async def telegram_callback(request: Request):
     data = request.query_params
-    token = settings.bot_token
     logging.info(f"================================== telegram_callback ==== data = {data} =======================================\n")
     print(f"================================== telegram_callback ==== data = {data} =======================================\n")
-    # Проверка подписи
-    if not check_signature(data, token):
-        raise HTTPException(status_code=403, detail="Invalid signature")
     user_id = data.get("id")
     print(f"================================== telegram_callback ==== user_id = {user_id} =======================================\n")
     logging.info(f"================================== telegram_callback ==== user_id = {user_id} =======================================\n")
+    
+    token = settings.bot_token
+
+    # Проверка подписи
+    if not check_signature(data, token):
+        raise HTTPException(status_code=403, detail="Invalid signature")
+    
+
     logging.info(f"====================== telegram_callback ==== settings.allowed_user_ids = {settings.allowed_user_ids} ==========================\n")
     print(f"====================== telegram_callback ==== settings.allowed_user_ids = {settings.allowed_user_ids} ==========================\n")
     if user_id and int(user_id) in settings.allowed_user_ids:
