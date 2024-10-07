@@ -50,13 +50,16 @@ router = APIRouter()
 
 
 def check_signature(data: dict, token: str) -> bool:
-    logging.info(f"Received data: {data}")
+    logging.info(f"=================== check_signature ==== data = {data}===================")
+    print(f"=================== check_signature ==== data = {data}===================")
     # string_to_check = f"{data['id']}_{data.get('first_name', '')}_{data.get('last_name', '')}_{data.get('username', '')}_{data['auth_date']}_{token}"
     string_to_check = f"{data['id']}_{data['auth_date']}_{token}"
     # Создаем подпись
     # signature = hmac.new(token.encode(), string_to_check.encode(), hashlib.sha256).hexdigest()
     signature = hmac.new(token.encode(), string_to_check.encode(), hashlib.sha256).hexdigest()
     # Сравниваем подпись
+    logging.info(f"=================== check_signature ==== signature = {signature}===================")
+    print(f"=================== check_signature ==== signature = {signature}===================")
     return signature == data.get("hash")
 
 
@@ -72,6 +75,8 @@ def check_signature(data: dict, token: str) -> bool:
 
 async def get_current_user(request: Request):
     user_id = await get_dictionary_list_from_cashe("user_id")
+    print(f"==================== get_current_user === user_id = {user_id} ========================")
+    logging.info(f"==================================== user_id ==={user_id}=======================================\n")
     
     if user_id is None or int(user_id) not in settings.allowed_user_ids:
         logging.warning("Unauthorized access attempt")
@@ -253,7 +258,7 @@ async def send_massege(request: Request):
 async def telegram_callback(request: Request):
     data = request.query_params
     token = settings.bot_token
-    logging.info(f"================================== telegram_callback = data === {data} =======================================\n")
+    logging.info(f"================================== telegram_callback ==== data = {data} =======================================\n")
     # Проверка подписи
     if not check_signature(data, token):
         raise HTTPException(status_code=403, detail="Invalid signature")

@@ -26,7 +26,8 @@ templates = Jinja2Templates(directory="src/templates")
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == 403:
-        logging.warning("Unauthorized access attempt")
+        logging.warning(f"================= http_exception_handler === Unauthorized access attempt ================")
+        print(f"================= http_exception_handler === Unauthorized access attempt ================")
         return RedirectResponse(url="/t_login")
     else:
         logging.error(f"HTTP Exception: {exc.detail}")
