@@ -259,12 +259,19 @@ async def telegram_callback(request: Request):
     data = request.query_params
     token = settings.bot_token
     logging.info(f"================================== telegram_callback ==== data = {data} =======================================\n")
+    print(f"================================== telegram_callback ==== data = {data} =======================================\n")
     # Проверка подписи
     if not check_signature(data, token):
         raise HTTPException(status_code=403, detail="Invalid signature")
     user_id = data.get("id")
+    print(f"================================== telegram_callback ==== user_id = {user_id} =======================================\n")
+    logging.info(f"================================== telegram_callback ==== user_id = {user_id} =======================================\n")
+    logging.info(f"====================== telegram_callback ==== settings.allowed_user_ids = {settings.allowed_user_ids} ==========================\n")
+    print(f"====================== telegram_callback ==== settings.allowed_user_ids = {settings.allowed_user_ids} ==========================\n")
     if user_id and int(user_id) in settings.allowed_user_ids:
         await save_dictionary_list_to_cache("user_id", user_id)  # Сохраняем user_id в кэш
+        user_id_saved = await get_dictionary_list_from_cashe("user_id")
+        print(f"============ telegram_callback === user_id_saved = {user_id_saved} ===============")
         response = RedirectResponse(url="/")
         # response.set_cookie(key="user_id", value=user_id)
         return response
