@@ -50,21 +50,21 @@ router = APIRouter()
 
 
 def check_signature(data: dict, token: str) -> bool:
-    # Получаем строку для проверки подписи
-    string_to_check = f"{data['id']}_{data['first_name']}_{data['last_name']}_{data['username']}_{data['auth_date']}_{token}"
-    
+    logging.info(f"Received data: {data}")
+    # string_to_check = f"{data['id']}_{data.get('first_name', '')}_{data.get('last_name', '')}_{data.get('username', '')}_{data['auth_date']}_{token}"
+    string_to_check = f"{data['id']}_{data['auth_date']}_{token}"
     # Создаем подпись
+    # signature = hmac.new(token.encode(), string_to_check.encode(), hashlib.sha256).hexdigest()
     signature = hmac.new(token.encode(), string_to_check.encode(), hashlib.sha256).hexdigest()
-    
     # Сравниваем подпись
     return signature == data.get("hash")
 
 
 # Зависимость для проверки аутентификации
 # async def get_current_user(request: Request):
-#     user_id = request.cookies.get("user_id")
+#     # user_id = request.cookies.get("user_id")
 #     logging.info(f"==================================== user_id ==={user_id}=======================================\n")
-#     user_cache = await get_dictionary_list_from_cashe(cache_name="user_cache")
+#     user_cache = await get_dictionary_list_from_cashe(cache_name="user_id")
 #     logging.info(f"==================================== user_cache ==={user_cache}=======================================\n")
 #     if not user_id or user_id is None or int(user_id) not in user_cache:
 #         raise HTTPException(status_code=403, detail="Not authorized")
@@ -93,32 +93,32 @@ async def logout():
 
 
 @router.get('/', response_class=HTMLResponse)
-async def index(request: Request, current_user: int = Depends(get_current_user)):
-    return templates.TemplateResponse("index.html", {"request": request, "user_id": current_user})
+async def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @router.get('/result', response_class=HTMLResponse)
 async def result(request: Request):
-    await get_current_user(request)
+    # await get_current_user(request)
     # if current_user is None: 
     #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     return templates.TemplateResponse("result.html", {"request": request})
 
 
 @router.get('/files', response_class=HTMLResponse)
-async def upload (request: Request):
-    await get_current_user(request)
+async def upload (request: Request, current_user: int = Depends(get_current_user)):
+    # await get_current_user(request)
     # if current_user is None: 
     #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
-    return templates.TemplateResponse("upload_files.html", {"request": request})
+    return templates.TemplateResponse("upload_files.html", {"request": request, "user_id": current_user})
 
 
 @router.post('/upload_files', response_class=HTMLResponse)
 async def upload_files(files: list[UploadFile], request: Request, error_message: str = None):
-    try:
-        await get_current_user(request)
-    except HTTPException:
-        return RedirectResponse(url="/login")
+    # try:
+    #     await get_current_user(request)
+    # except HTTPException:
+    #     return RedirectResponse(url="/login")
         
     # if current_user is None: 
     #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
@@ -153,7 +153,7 @@ async def upload_files(files: list[UploadFile], request: Request, error_message:
 
 @router.get('/download_file')
 async def download_file(request: Request):
-    await get_current_user(request)
+    # await get_current_user(request)
     # if current_user is None: 
     #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     downloads_dir = BASE_DIR/"downloads"
@@ -186,16 +186,16 @@ async def download_logs(request: Request):
 
 
 @router.get('/mail', response_class=HTMLResponse)
-async def mail(request: Request, current_user: int = Depends(get_current_user)):
-    current_user = await get_current_user(request)
-    if current_user is None: 
-        return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
-    return templates.TemplateResponse("mail.html", {"request": request, "user_id": current_user})
+async def mail(request: Request):
+    # current_user = await get_current_user(request)
+    # if current_user is None: 
+    #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
+    return templates.TemplateResponse("mail.html", {"request": request})
 
 
 @router.get('/send_reminder/{key}', response_class=HTMLResponse)
 async def send_reminder(request: Request, key: str):
-    await get_current_user(request)
+    # await get_current_user(request)
     # if current_user is None: 
     #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     dictionary_list = await get_dictionary_list_from_cashe(cache_name="result_table")
@@ -253,7 +253,7 @@ async def send_massege(request: Request):
 async def telegram_callback(request: Request):
     data = request.query_params
     token = settings.bot_token
-    logging.info(f"==================================== data === {data} =======================================\n")
+    logging.info(f"================================== telegram_callback = data === {data} =======================================\n")
     # Проверка подписи
     if not check_signature(data, token):
         raise HTTPException(status_code=403, detail="Invalid signature")

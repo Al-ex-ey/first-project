@@ -20,7 +20,6 @@ class Settings(BaseSettings):
     mail_password: str
     user_ids: List[int]
     bot_token: str
-    # domain: str
     
     @property
     def allowed_user_ids(self) -> List[int]:
