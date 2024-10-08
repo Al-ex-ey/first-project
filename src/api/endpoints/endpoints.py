@@ -54,15 +54,16 @@ def check_signature(data: dict, token: str) -> bool:
     logging.info(f"=================== check_signature ==== data = {data}===================")
     print(f"=================== check_signature ==== data = {data}===================")
     # string_to_check = f"{data['id']}_{data.get('first_name', '')}_{data.get('last_name', '')}_{data.get('username', '')}_{data['auth_date']}_{token}"
-    parts = [
-        data['id'],
-        data.get('first_name', ''),
-        data.get('last_name', ''),
-        data.get('username', ''),
-        data['auth_date'],
+    sorted_parts = sorted([
+        f"{data['id']}",
+        f"{data.get('first_name', '')}",
+        f"{data.get('last_name', '')}",
+        f"{data.get('username', '')}",
+        f"{data['auth_date']}",
         token
-    ]
-    string_to_check = '_'.join(part for part in parts if part)
+    ])
+    
+    string_to_check = '_'.join(sorted_parts)
     
     logging.info(f"================ check_signature ====== String to check: {string_to_check} =========================")
     print(f"================ check_signature ====== String to check: {string_to_check} =========================")
@@ -76,7 +77,8 @@ def check_signature(data: dict, token: str) -> bool:
     print(f"=================== check_signature ==== signature = {signature}===================")
     logging.info(f"=================== check_signature ==== data.get(hash) = {data.get('hash')}===================")
     print(f"=================== check_signature ==== data.get(hash) = {data.get('hash')}===================")
-    return signature == data.get("hash")
+    # return signature == data.get("hash")
+    return hmac.compare_digest(signature, data.get("hash"))
 
 
 # Зависимость для проверки аутентификации
