@@ -17,8 +17,8 @@
             console.log('User data:', user); // Выводим данные пользователя в консоль
         
             // Отправка данных пользователя на сервер
-            fetch('/auth/telegram/callback', {
-                method: 'GET', // Или 'POST', если вы измените метод на сервере
+            fetch('https://project-mh.ddns.net/auth/telegram/callback', {
+                method: 'GET', 
                 headers: {
                     'Content-Type': 'application/json'
                 },
