@@ -82,8 +82,8 @@ def check_signature(data: dict, token: str) -> bool:
     # Сравниваем подпись
     logging.info(f"=================== check_signature ==== signature = {hash_value}===================")
     print(f"=================== check_signature ==== signature = {hash_value}===================")
-    logging.info(f"=================== check_signature ==== data.get(hash) = {data.get('hash')}===================")
-    print(f"=================== check_signature ==== data.get(hash) = {data.get('hash')}===================")
+    logging.info(f"=================== check_signature ==== data.get(hash) = {check_hash}===================")
+    print(f"=================== check_signature ==== data.get(hash) = {check_hash}===================")
     # return signature == data.get("hash")
     if not hmac.compare_digest(hash_value, check_hash):
         raise Exception('Data is NOT from Telegram')
