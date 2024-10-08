@@ -13,6 +13,7 @@ import urllib.parse
 from fastapi.templating import Jinja2Templates
 from fastapi import APIRouter, Depends, Request, UploadFile, status, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
+from urllib.parse import unquote
 from .validators import load_validate
 import shutil
 import datetime as dt
@@ -272,16 +273,19 @@ async def send_massege(request: Request):
 @router.get("/auth/telegram/callback")
 async def telegram_callback(request: Request):
     data = request.query_params
+    decoded_data = {key: unquote(value) for key, value in data.items()}
     logging.info(f"================================== telegram_callback ==== data = {data} =======================================\n")
     print(f"================================== telegram_callback ==== data = {data} =======================================\n")
-    user_id = data.get("id")
+    print(f"================================== telegram_callback ==== decoded_data = {decoded_data} =======================================\n")
+    # user_id = data.get("id")
+    user_id = decoded_data.get("id")
     print(f"================================== telegram_callback ==== user_id = {user_id} =======================================\n")
     logging.info(f"================================== telegram_callback ==== user_id = {user_id} =======================================\n")
     
     token = settings.bot_token
 
     # Проверка подписи
-    if not check_signature(data, token):
+    if not check_signature(decoded_data, token):
         raise HTTPException(status_code=403, detail="Invalid signature")
     
 
