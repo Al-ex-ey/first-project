@@ -11,47 +11,10 @@
 <body>
     <div class="container mt-5">
 
-        <script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="Manager_helper_VL_bot" data-size="large" data-radius="10" data-onauth="onTelegramAuth(user)" data-request-access="write"></script>
-        <script type="text/javascript">
-          function onTelegramAuth(user) {
-            console.log('User data:', user); // Выводим данные пользователя в консоль
-        
-            // Отправка данных пользователя на сервер
-            fetch('https://project-mh.ddns.net/auth/telegram/callback', {
-                method: 'GET', 
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                // Преобразуем данные пользователя в URL-параметры
-                body: new URLSearchParams({
-                    id: user.id,
-                    first_name: user.first_name,
-                    last_name: user.last_name,
-                    username: user.username,
-                    auth_date: user.auth_date,
-                    hash: user.hash // Добавьте hash, если он нужен для проверки подписи
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    alert('Ошибка авторизации');
-                }
-            })
-            .catch(error => console.error('Ошибка:', error));
-          }
-        </script>
+        <script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="Manager_helper_VL_bot" data-size="large" data-radius="10" data-auth-url="https://project-mh.ddns.net/auth/telegram/callback" data-request-access="write"></script>
 
         {% include "footer.html" %}
     </div>
 </body>
 
 </html>
-
-
-        <!-- <script async src="https://telegram.org/js/telegram-widget.js?22"
-            data-telegram-login="Manager_helper_VL_bot"
-            data-size="large"
-            data-radius="10"
-            data-onauth="onTelegramAuth(user)"
-            data-request-access="write">
-        </script> -->
