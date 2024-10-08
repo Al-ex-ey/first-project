@@ -7,7 +7,7 @@ import os
 import logging
 import hmac
 import hashlib
-import urllib.parse
+import time
 # from email.message import EmailMessage
 # from src.utils import template_processing
 from fastapi.templating import Jinja2Templates
@@ -54,31 +54,45 @@ def check_signature(data: dict, token: str) -> bool:
     logging.info(f"=================== check_signature ==== data = {data}===================")
     print(f"=================== check_signature ==== data = {data}===================")
     # string_to_check = f"{data['id']}_{data.get('first_name', '')}_{data.get('last_name', '')}_{data.get('username', '')}_{data['auth_date']}_{token}"
-    sorted_parts = sorted([
-        f"{data['id']}",
-        f"{data.get('first_name', '')}",
-        f"{data.get('last_name', '')}",
-        f"{data.get('username', '')}",
-        f"{data['auth_date']}",
-        token
-    ])
+    # sorted_parts = sorted([
+    #     f"{data['id']}",
+    #     f"{data.get('first_name', '')}",
+    #     f"{data.get('last_name', '')}",
+    #     f"{data.get('username', '')}",
+    #     f"{data['auth_date']}",
+    #     token
+    # ])
+    check_hash = data.pop('hash', None)
+    if not check_hash:
+        raise Exception("Hash not found in the provided data")
+    # string_to_check = '_'.join(sorted_parts)
+    data_check_arr = [f"{key}={value}" for key, value in data.items()]
+    data_check_arr.sort()
+    data_check_string = "\n".join(data_check_arr)
+    secret_key = hashlib.sha256(token.encode()).digest()
     
-    string_to_check = '_'.join(sorted_parts)
     
-    logging.info(f"================ check_signature ====== String to check: {string_to_check} =========================")
-    print(f"================ check_signature ====== String to check: {string_to_check} =========================")
+    logging.info(f"================ check_signature ====== String to check: {data_check_string} =========================")
+    print(f"================ check_signature ====== String to check: {data_check_string} =========================")
     logging.info(f"================ check_signature ====== Token: {token} =========================")
     print(f"================ check_signature ====== Token: {token} =========================")
     # Создаем подпись
     # signature = hmac.new(token.encode(), string_to_check.encode(), hashlib.sha256).hexdigest()
-    signature = hmac.new(token.encode(), string_to_check.encode(), hashlib.sha256).hexdigest()
+    hash_value = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
     # Сравниваем подпись
-    logging.info(f"=================== check_signature ==== signature = {signature}===================")
-    print(f"=================== check_signature ==== signature = {signature}===================")
+    logging.info(f"=================== check_signature ==== signature = {hash_value}===================")
+    print(f"=================== check_signature ==== signature = {hash_value}===================")
     logging.info(f"=================== check_signature ==== data.get(hash) = {data.get('hash')}===================")
     print(f"=================== check_signature ==== data.get(hash) = {data.get('hash')}===================")
     # return signature == data.get("hash")
-    return hmac.compare_digest(signature, data.get("hash"))
+    if not hmac.compare_digest(hash_value, check_hash):
+        raise Exception('Data is NOT from Telegram')
+
+    # Проверка времени авторизации (если необходимо)
+    if (time.time() - int(data['auth_date'])) > 86400:
+        raise Exception('Data is outdated')
+    
+    return True  # Возвращаем True при успешной проверке
 
 
 # Зависимость для проверки аутентификации
