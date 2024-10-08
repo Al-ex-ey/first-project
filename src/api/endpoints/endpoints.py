@@ -53,7 +53,7 @@ def check_signature(data: dict, token: str) -> bool:
     logging.info(f"=================== check_signature ==== data = {data}===================")
     print(f"=================== check_signature ==== data = {data}===================")
     # string_to_check = f"{data['id']}_{data.get('first_name', '')}_{data.get('last_name', '')}_{data.get('username', '')}_{data['auth_date']}_{token}"
-    string_to_check = f"{data['id']}_{data['auth_date']}_{token}"
+    string_to_check = f"{data['id']}_{data.get('first_name', '')}_{data.get('last_name', '')}_{data.get('username', '')}_{data['auth_date']}_{token}"
     # Создаем подпись
     # signature = hmac.new(token.encode(), string_to_check.encode(), hashlib.sha256).hexdigest()
     signature = hmac.new(token.encode(), string_to_check.encode(), hashlib.sha256).hexdigest()
