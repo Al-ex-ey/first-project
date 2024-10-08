@@ -60,6 +60,8 @@ def check_signature(data: dict, token: str) -> bool:
     # Сравниваем подпись
     logging.info(f"=================== check_signature ==== signature = {signature}===================")
     print(f"=================== check_signature ==== signature = {signature}===================")
+    logging.info(f"=================== check_signature ==== data.get(hash) = {data.get('hash')}===================")
+    print(f"=================== check_signature ==== data.get(hash) = {data.get('hash')}===================")
     return signature == data.get("hash")
 
 
