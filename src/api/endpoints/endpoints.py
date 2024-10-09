@@ -22,6 +22,7 @@ from src.utils import (
     cache,
     get_dictionary_list_from_cashe,
     save_dictionary_list_to_cache,
+    delete_dictionary_list_from_cache,
     # wa_message,
     email_message,
     info_validation,
@@ -48,6 +49,24 @@ templates = Jinja2Templates(directory="src/templates")
 configure_logging()
 
 router = APIRouter()
+
+
+async def delete_files():
+    downloads_dir = BASE_DIR/"downloads"
+    
+    # Проверяем, существует ли директория
+    if downloads_dir.exists() and downloads_dir.is_dir():
+        for file in os.listdir(downloads_dir):
+            file_path = downloads_dir/file
+            try:
+                if file_path.is_file():  # Проверяем, является ли путь файлом
+                    os.remove(file_path)  # Удаляем файл
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Error deleting file {file}: {str(e)}")
+        return logging.info(f"==================== Папка downloads очищена! ====================")
+    else:
+        logging.warning(f"==================== Папка downloads не найдена! ====================")
+        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
 
 
 def check_signature(data: dict, token: str) -> bool:
@@ -88,22 +107,11 @@ def check_signature(data: dict, token: str) -> bool:
     if not hmac.compare_digest(hash_value, check_hash):
         raise Exception('Data is NOT from Telegram')
 
-    # Проверка времени авторизации (если необходимо)
+    # Проверка времени авторизации
     if (time.time() - int(data['auth_date'])) > 86400:
         raise Exception('Data is outdated')
     
-    return True  # Возвращаем True при успешной проверке
-
-
-# Зависимость для проверки аутентификации
-# async def get_current_user(request: Request):
-#     # user_id = request.cookies.get("user_id")
-#     logging.info(f"==================================== user_id ==={user_id}=======================================\n")
-#     user_cache = await get_dictionary_list_from_cashe(cache_name="user_id")
-#     logging.info(f"==================================== user_cache ==={user_cache}=======================================\n")
-#     if not user_id or user_id is None or int(user_id) not in user_cache:
-#         raise HTTPException(status_code=403, detail="Not authorized")
-#     return int(user_id)
+    return True
 
 async def get_current_user(request: Request):
     user_id = await get_dictionary_list_from_cashe("user_id")
@@ -123,10 +131,12 @@ async def login(request: Request):
 
 
 @router.get("/logout")
-async def logout():
-    response = RedirectResponse(url="/login")
-    response.delete_cookie("user_id")
-    return response
+async def logout(request: Request):
+    await delete_dictionary_list_from_cache("user_id")
+    await delete_dictionary_list_from_cache("result_table")
+    await delete_dictionary_list_from_cache("legal_entity")
+    await delete_files()
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @router.get('/', response_class=HTMLResponse)
@@ -136,29 +146,16 @@ async def index(request: Request, current_user: int = Depends(get_current_user))
 
 @router.get('/result', response_class=HTMLResponse)
 async def result(request: Request):
-    # await get_current_user(request)
-    # if current_user is None: 
-    #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     return templates.TemplateResponse("result.html", {"request": request})
 
 
 @router.get('/files', response_class=HTMLResponse)
 async def upload (request: Request, current_user: int = Depends(get_current_user)):
-    # await get_current_user(request)
-    # if current_user is None: 
-    #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     return templates.TemplateResponse("upload_files.html", {"request": request, "user_id": current_user})
 
 
 @router.post('/upload_files', response_class=HTMLResponse)
 async def upload_files(files: list[UploadFile], request: Request, error_message: str = None, current_user: int = Depends(get_current_user)):
-    # try:
-    #     await get_current_user(request)
-    # except HTTPException:
-    #     return RedirectResponse(url="/login")
-        
-    # if current_user is None: 
-    #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     load_validate(files)
     file_list = []
     for file in files:
@@ -184,15 +181,12 @@ async def upload_files(files: list[UploadFile], request: Request, error_message:
     path = BASE_DIR/"downloads"
     files_dir = os.listdir(path)
     if "Arenda_2024.xlsx" in files_dir:
-        return templates.TemplateResponse("result.html", status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "user_id": current_user})
-    return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "user_id": current_user})
+        return templates.TemplateResponse("result.html", status_code=status.HTTP_303_SEE_OTHER, context={"request": request, query_params: query_params, "user_id": current_user})
+    return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get('/download_file')
 async def download_file(request: Request, current_user: int = Depends(get_current_user)):
-    # await get_current_user(request)
-    # if current_user is None: 
-    #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     downloads_dir = BASE_DIR/"downloads"
     downloads_dir.mkdir(exist_ok=True)
     files_dir = os.listdir(downloads_dir)
@@ -200,41 +194,32 @@ async def download_file(request: Request, current_user: int = Depends(get_curren
         try:
             return FileResponse(f"{downloads_dir}/Arenda_2024.xlsx", media_type = "xlsx", filename="Arenda_2024.xlsx")
         except Exception as e:
-            raise FileNotFoundError(f"File in '{downloads_dir}/Arenda_2024.xlsx' not found")
+            raise FileNotFoundError(f"File in not found")
     else:
-        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "user_id": current_user})
+        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
     
     
 @router.get('/download_logs')
 async def download_logs(request: Request, current_user: int = Depends(get_current_user)):
-    # current_user = await get_current_user(request)
-    # if current_user is None: 
-    #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
-    downloads_dir = BASE_DIR/"logs"
-    downloads_dir.mkdir(exist_ok=True)
-    files_dir = os.listdir(downloads_dir)
+    logs_dir = BASE_DIR/"logs"
+    logs_dir.mkdir(exist_ok=True)
+    files_dir = os.listdir(logs_dir)
     if "parsing_excel_log.log" in files_dir:
         try:
-            return FileResponse(f"{downloads_dir}/parsing_excel_log.log", media_type = "log", filename="parsing_excel_log.log")
+            return FileResponse(f"{logs_dir}/parsing_excel_log.log", media_type = "log", filename="parsing_excel_log.log")
         except Exception as e:
             raise FileNotFoundError(f"File in not found")
     else:
-        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "user_id": current_user})
+        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get('/mail', response_class=HTMLResponse)
 async def mail(request: Request, current_user: int = Depends(get_current_user)):
-    # current_user = await get_current_user(request)
-    # if current_user is None: 
-    #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     return templates.TemplateResponse("mail.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/send_reminder/{key}', response_class=HTMLResponse)
 async def send_reminder(request: Request, key: str):
-    # await get_current_user(request)
-    # if current_user is None: 
-    #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
     dictionary_list = await get_dictionary_list_from_cashe(cache_name="result_table")
     if not dictionary_list or dictionary_list is None:
         raise "Пользователь не найден"

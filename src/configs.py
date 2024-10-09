@@ -33,9 +33,9 @@ settings = Settings()
 
 
 def configure_logging():
-    log_dir = BASE_DIR / 'logs'
+    log_dir = BASE_DIR/'logs'
     log_dir.mkdir(exist_ok=True)
-    log_file = log_dir / 'parsing_excel_log.log'
+    log_file = log_dir/'parsing_excel_log.log'
     
     logging.basicConfig(
         datefmt=DT_FORMAT,

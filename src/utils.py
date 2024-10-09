@@ -47,12 +47,21 @@ async def save_dictionary_list_to_cache(cache_name: str, dictionary_list: list |
     cache[cache_name] = dictionary_list
     return logging.info(f"___Словарь сохранен в кеш___")
 
+
 async def get_dictionary_list_from_cashe(cache_name: str):
     if cache_name in cache:
         logging.info(f"___Запрос словаря из кеша___")
         return cache[cache_name]
     else:
         return logging.info(f"____Словарь в кеше не найден___")
+    
+
+async def delete_dictionary_list_from_cache(cache_name: str):
+    if cache_name in cache:
+        del cache[cache_name]
+        logging.info(f"___Словарь '{cache_name}' удален из кеша___")
+    else:
+        logging.info(f"____Словарь '{cache_name}' не найден в кеше для удаления___")
     
 
 async def info_validation(**kwargs):
@@ -97,6 +106,7 @@ async def info_validation(**kwargs):
                     validation_info["ul"] = le
 
     return validation_info
+
 
 
 # async def wa_message(send_remainder_text: str, phone_number: str):

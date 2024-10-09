@@ -29,6 +29,10 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         logging.warning(f"================= http_exception_handler === Unauthorized access attempt ================")
         print(f"================= http_exception_handler === Unauthorized access attempt ================")
         return RedirectResponse(url="/t_login")
+    elif exc.status_code == 500:
+        logging.warning(f"================= {exc.detail} Что то пошло не так :( ================")
+        print(f"================= {exc.detail} Что то пошло не так :( ================")
+        return RedirectResponse(url="/")
     else:
         logging.error(f"HTTP Exception: {exc.detail}")
         return templates.TemplateResponse("upload_files.html", {
