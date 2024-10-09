@@ -130,8 +130,8 @@ async def logout():
 
 
 @router.get('/', response_class=HTMLResponse)
-async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def index(request: Request, current_user: int = Depends(get_current_user)):
+    return templates.TemplateResponse("index.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/result', response_class=HTMLResponse)
@@ -151,7 +151,7 @@ async def upload (request: Request, current_user: int = Depends(get_current_user
 
 
 @router.post('/upload_files', response_class=HTMLResponse)
-async def upload_files(files: list[UploadFile], request: Request, error_message: str = None):
+async def upload_files(files: list[UploadFile], request: Request, error_message: str = None, current_user: int = Depends(get_current_user)):
     # try:
     #     await get_current_user(request)
     # except HTTPException:
@@ -184,12 +184,12 @@ async def upload_files(files: list[UploadFile], request: Request, error_message:
     path = BASE_DIR/"downloads"
     files_dir = os.listdir(path)
     if "Arenda_2024.xlsx" in files_dir:
-        return templates.TemplateResponse("result.html", status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "query_params": query_params})
-    return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
+        return templates.TemplateResponse("result.html", status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "user_id": current_user})
+    return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "user_id": current_user})
 
 
 @router.get('/download_file')
-async def download_file(request: Request):
+async def download_file(request: Request, current_user: int = Depends(get_current_user)):
     # await get_current_user(request)
     # if current_user is None: 
     #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
@@ -202,11 +202,11 @@ async def download_file(request: Request):
         except Exception as e:
             raise FileNotFoundError(f"File in '{downloads_dir}/Arenda_2024.xlsx' not found")
     else:
-        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "user_id": current_user})
     
     
 @router.get('/download_logs')
-async def download_logs(request: Request):
+async def download_logs(request: Request, current_user: int = Depends(get_current_user)):
     # current_user = await get_current_user(request)
     # if current_user is None: 
     #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
@@ -217,17 +217,17 @@ async def download_logs(request: Request):
         try:
             return FileResponse(f"{downloads_dir}/parsing_excel_log.log", media_type = "log", filename="parsing_excel_log.log")
         except Exception as e:
-            raise FileNotFoundError(f"File in '{downloads_dir}/parsing_excel_log.log' not found")
+            raise FileNotFoundError(f"File in not found")
     else:
-        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "user_id": current_user})
 
 
 @router.get('/mail', response_class=HTMLResponse)
-async def mail(request: Request):
+async def mail(request: Request, current_user: int = Depends(get_current_user)):
     # current_user = await get_current_user(request)
     # if current_user is None: 
     #     return templates.TemplateResponse("/t_login.html", {"request": request}, status_code=status.HTTP_401_UNAUTHORIZED)
-    return templates.TemplateResponse("mail.html", {"request": request})
+    return templates.TemplateResponse("mail.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/send_reminder/{key}', response_class=HTMLResponse)
