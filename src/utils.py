@@ -38,33 +38,37 @@ class Organizations(Enum):
 
 
 def is_valid_email(email: str) -> bool:
-    # проверка формата электронной почты
+    logging.info(f"==================== is_valid_email - проверка формата эл. почты! ====================\n")
     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(email_pattern, email) is not None
 
 
 async def save_dictionary_list_to_cache(cache_name: str, dictionary_list: list | dict):
+    logging.info(f"==================== save_dictionary_list_to_cache - сохранение словаря в кеш! ====================\n")
     cache[cache_name] = dictionary_list
     return logging.info(f"___Словарь сохранен в кеш___")
 
 
 async def get_dictionary_list_from_cashe(cache_name: str):
+    logging.info(f"==================== get_dictionary_list_from_cashe - получение словаря из кеша! ====================\n")
     if cache_name in cache:
-        logging.info(f"___Запрос словаря из кеша___")
+        logging.info(f"==================== get_dictionary_list_from_cashe - завершено успешно - получение словаря из кеша! ====================\n")
         return cache[cache_name]
     else:
-        return logging.info(f"____Словарь в кеше не найден___")
+        return logging.info(f"==================== get_dictionary_list_from_cashe - завершено НЕ успешно - словарь в кэше НЕ найден! ====================\n")
     
 
 async def delete_dictionary_list_from_cache(cache_name: str):
+    logging.info(f"==================== delete_dictionary_list_from_cache - удаление словаря из кеша! ====================\n")
     if cache_name in cache:
         del cache[cache_name]
-        logging.info(f"___Словарь '{cache_name}' удален из кеша___")
+        logging.info(f"==================== delete_dictionary_list_from_cache - завершено успешно - {cache_name} словарь удален! ====================\n")
     else:
-        logging.info(f"____Словарь '{cache_name}' не найден в кеше для удаления___")
+        logging.info(f"==================== delete_dictionary_list_from_cache - завершено НЕ успешно - {cache_name} словарь не найден! ====================\n")
     
 
 async def info_validation(**kwargs):
+    logging.info(f"==================== info_validation - проверка параметров! ====================\n")
     if not kwargs:
         logging.info(f"___Параметры не переданы___")
         return HTTPException(status_code=400, detail="Параметры не переданы")
@@ -75,22 +79,24 @@ async def info_validation(**kwargs):
     if 'phone_number' in kwargs:
         phone_number = kwargs['phone_number']
         if isinstance(phone_number, str):
-            # phone_pattern = re.compile(r'\+7\d{10}')
             pattern = re.compile(r'\D')
             c:str = re.sub(pattern, '', phone_number)
             if len(c) >= 10:
                 number = c[-10:]
                 phone_number_re = f"+7{number}"
                 validation_info["phone_number"] = phone_number_re
+                logging.info(f"==================== info_validation - проверка номера телефона завершена успешно! ====================\n")
 
     if 'send_remainder_text' in kwargs:
         send_remainder_text = kwargs['send_remainder_text']
         if isinstance(send_remainder_text, str):
             validation_info["send_remainder_text"] = send_remainder_text
+            logging.info(f"==================== info_validation - проверка сообщения завершена успешно! ====================\n")
 
     if 'email' in kwargs:
         email: EmailStr | list[EmailStr] = kwargs['email']
         validation_info["email"] = email
+        logging.info(f"==================== info_validation - проверка эл. почты завершена успешно! ====================\n")
 
     if 'ul' in kwargs:
         ul = kwargs['ul']
@@ -104,12 +110,14 @@ async def info_validation(**kwargs):
                         if key == ul_name:
                             le = ul_list[key]
                     validation_info["ul"] = le
+                    logging.info(f"==================== info_validation - проверка юр. лица завершена успешно! ====================\n")
 
     return validation_info
 
 
 
 # async def wa_message(send_remainder_text: str, phone_number: str):
+#logging.info(f"==================== wa_message - утилита по отправки сообщения через WhatsApp! ====================\n")
 #     send_remainder_text = quote(send_remainder_text)
 #     # phone_pattern = re.compile(r'\+7\d{10}')
 #     # if not re.search(phone_pattern, phone_number):
@@ -132,6 +140,7 @@ async def info_validation(**kwargs):
 
 
 async def email_message(send_remainder_text: str, email: EmailStr | list[EmailStr], ul: list, arenator: str):
+    logging.info(f"==================== email_message - утилита по отправки письма! ====================\n")
     # print(f"{email} --- {send_remainder_text} --- {ul} --- {arenator}\n")
     # ul_list = await get_dictionary_list_from_cashe(cache_name="legal_entity")
     # if not ul_list or ul_list is None:
@@ -160,7 +169,7 @@ async def email_message(send_remainder_text: str, email: EmailStr | list[EmailSt
         smtp.login(ul[5], MAIL_PASSWORD)
         smtp.send_message(msg)
 
-    logging.info(f"___Напоминание отправлено на эл. почту, для {arenator} от {ul[0]}\n")
+    logging.info(f"==================== email_message - письмо для {arenator} от {ul[0]} отправлено! ====================\n")
     return 
 
 

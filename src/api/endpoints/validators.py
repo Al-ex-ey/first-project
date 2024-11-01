@@ -3,10 +3,10 @@ import re
 
 
 def load_validate(files: list):
-    if len(files) != 2:
+    if len(files) != 2 or 3:
         raise HTTPException(
             status_code=403,
-            detail="File upload failed: needed 2 files!"
+            detail="File upload failed: needed 2 or 3 files!"
         ) 
     for file in files:
         if file.content_type != "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":

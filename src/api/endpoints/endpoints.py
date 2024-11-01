@@ -52,8 +52,8 @@ router = APIRouter()
 
 
 async def delete_files():
+    logging.info(f"==================== delete_files - Запущена очистка папки downloads! ====================\n")
     downloads_dir = BASE_DIR/"downloads"
-    
     # Проверяем, существует ли директория
     if downloads_dir.exists() and downloads_dir.is_dir():
         for file in os.listdir(downloads_dir):
@@ -63,24 +63,14 @@ async def delete_files():
                     os.remove(file_path)  # Удаляем файл
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Error deleting file {file}: {str(e)}")
-        return logging.info(f"==================== Папка downloads очищена! ====================")
+        return logging.info(f"==================== Папка downloads очищена! ====================\n")
     else:
-        logging.warning(f"==================== Папка downloads не найдена! ====================")
+        logging.warning(f"==================== Папка downloads не найдена! ====================\n")
         return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
 
 
 def check_signature(data: dict, token: str) -> bool:
-    logging.info(f"=================== check_signature ==== data = {data}===================")
-    print(f"=================== check_signature ==== data = {data}===================")
-    # string_to_check = f"{data['id']}_{data.get('first_name', '')}_{data.get('last_name', '')}_{data.get('username', '')}_{data['auth_date']}_{token}"
-    # sorted_parts = sorted([
-    #     f"{data['id']}",
-    #     f"{data.get('first_name', '')}",
-    #     f"{data.get('last_name', '')}",
-    #     f"{data.get('username', '')}",
-    #     f"{data['auth_date']}",
-    #     token
-    # ])
+    logging.info(f"==================== check_signature - Проверка подписи данных от Telegram! ====================\n")
     check_hash = data.pop('hash', None)
     if not check_hash:
         raise Exception("Hash not found in the provided data")
@@ -89,73 +79,65 @@ def check_signature(data: dict, token: str) -> bool:
     data_check_arr.sort()
     data_check_string = "\n".join(data_check_arr)
     secret_key = hashlib.sha256(token.encode()).digest()
-    
-    
-    logging.info(f"================ check_signature ====== String to check: {data_check_string} =========================")
-    print(f"================ check_signature ====== String to check: {data_check_string} =========================")
-    logging.info(f"================ check_signature ====== Token: {token} =========================")
-    print(f"================ check_signature ====== Token: {token} =========================")
     # Создаем подпись
-    # signature = hmac.new(token.encode(), string_to_check.encode(), hashlib.sha256).hexdigest()
     hash_value = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
     # Сравниваем подпись
-    logging.info(f"=================== check_signature ==== signature = {hash_value}===================")
-    print(f"=================== check_signature ==== signature = {hash_value}===================")
-    logging.info(f"=================== check_signature ==== data.get(hash) = {check_hash}===================")
-    print(f"=================== check_signature ==== data.get(hash) = {check_hash}===================")
-    # return signature == data.get("hash")
     if not hmac.compare_digest(hash_value, check_hash):
         raise Exception('Data is NOT from Telegram')
-
     # Проверка времени авторизации
     if (time.time() - int(data['auth_date'])) > 86400:
         raise Exception('Data is outdated')
-    
+    logging.info(f"==================== check_signature - Завершено успешно! ====================\n")
     return True
 
+
 async def get_current_user(request: Request):
+    logging.info(f"==================== get_current_user - Проверка авторизации пользователя! ====================\n")
     user_id = await get_dictionary_list_from_cashe("user_id")
-    print(f"==================== get_current_user === user_id = {user_id} ========================")
-    logging.info(f"==================================== user_id ==={user_id}=======================================\n")
-    
     if user_id is None or int(user_id) not in settings.allowed_user_ids:
         logging.warning("Unauthorized access attempt")
         raise HTTPException(status_code=403, detail="Not authorized")
-
+    logging.info(f"==================== get_current_user - Завершено успешно! ====================\n")
     return int(user_id)
 
 
 @router.get('/t_login', response_class=HTMLResponse)
 async def login(request: Request):
+    logging.info(f"==================== t_login - Перенаправление на страницу авторизации! ====================\n")
     return templates.TemplateResponse("t_login.html", {"request": request})
 
 
 @router.get("/logout")
 async def logout(request: Request):
-    await delete_dictionary_list_from_cache("user_id")
+    logging.info(f"==================== logout - выход - отчистка кеша, отвязка пользователя! ====================\n")
+    await delete_files()
     await delete_dictionary_list_from_cache("result_table")
     await delete_dictionary_list_from_cache("legal_entity")
-    await delete_files()
+    await delete_dictionary_list_from_cache("user_id")
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 @router.get('/', response_class=HTMLResponse)
 async def index(request: Request, current_user: int = Depends(get_current_user)):
+    logging.info(f"==================== index - переход на главную страницу! ====================\n")
     return templates.TemplateResponse("index.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/result', response_class=HTMLResponse)
-async def result(request: Request):
-    return templates.TemplateResponse("result.html", {"request": request})
+async def result(request: Request, current_user: int = Depends(get_current_user)):
+    logging.info(f"==================== result - перенаправление на страницу с результатом обработки файлов! ====================\n")
+    return templates.TemplateResponse("result.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/files', response_class=HTMLResponse)
 async def upload (request: Request, current_user: int = Depends(get_current_user)):
+    logging.info(f"==================== files - перенаправление на страницу загрузки файлов! ====================\n")
     return templates.TemplateResponse("upload_files.html", {"request": request, "user_id": current_user})
 
 
 @router.post('/upload_files', response_class=HTMLResponse)
 async def upload_files(files: list[UploadFile], request: Request, error_message: str = None, current_user: int = Depends(get_current_user)):
+    logging.info(f"==================== upload_files - загрузка файлов для обработки! ====================\n")
     load_validate(files)
     file_list = []
     for file in files:
@@ -181,26 +163,32 @@ async def upload_files(files: list[UploadFile], request: Request, error_message:
     path = BASE_DIR/"downloads"
     files_dir = os.listdir(path)
     if "Arenda_2024.xlsx" in files_dir:
+        logging.info(f"==================== upload_files - завершено успешно! ====================\n")
         return templates.TemplateResponse("result.html", status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "query_params": query_params, "user_id": current_user})
     return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get('/download_file')
 async def download_file(request: Request, current_user: int = Depends(get_current_user)):
+    logging.info(f"==================== download_file - скачать обработанный файл! ====================\n")
     downloads_dir = BASE_DIR/"downloads"
     downloads_dir.mkdir(exist_ok=True)
     files_dir = os.listdir(downloads_dir)
     if "Arenda_2024.xlsx" in files_dir:
         try:
+            logging.info(f"==================== download_file - завершено успешно! ====================\n")
             return FileResponse(f"{downloads_dir}/Arenda_2024.xlsx", media_type = "xlsx", filename="Arenda_2024.xlsx")
         except Exception as e:
             raise FileNotFoundError(f"File in not found")
     else:
-        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
+        logging.info(f"==================== download_file - завершено НЕ успешно! ====================\n")
+    # return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse("index.html", {"request": request, "user_id": current_user})
     
     
 @router.get('/download_logs')
 async def download_logs(request: Request, current_user: int = Depends(get_current_user)):
+    logging.info(f"==================== download_logs - скачать логи! ====================\n")
     logs_dir = BASE_DIR/"logs"
     logs_dir.mkdir(exist_ok=True)
     files_dir = os.listdir(logs_dir)
@@ -210,16 +198,20 @@ async def download_logs(request: Request, current_user: int = Depends(get_curren
         except Exception as e:
             raise FileNotFoundError(f"File in not found")
     else:
-        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
+        logging.info(f"==================== download_logs - завершено НЕ успешно! ====================\n")
+    # return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse("index.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/mail', response_class=HTMLResponse)
 async def mail(request: Request, current_user: int = Depends(get_current_user)):
+    logging.info(f"==================== mail - Переход на страницу отправки почты! ====================\n")
     return templates.TemplateResponse("mail.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/send_reminder/{key}', response_class=HTMLResponse)
 async def send_reminder(request: Request, key: str):
+    logging.info(f"==================== send_reminder - Отправка уведомления! ====================\n")
     dictionary_list = await get_dictionary_list_from_cashe(cache_name="result_table")
     if not dictionary_list or dictionary_list is None:
         raise "Пользователь не найден"
@@ -254,6 +246,7 @@ async def send_reminder(request: Request, key: str):
                 ul = validation_info["ul"],
                 arenator = arenator,
             )
+            logging.info(f"==================== send_reminder - Отправка уведомления для пользователя {arenator} выполнена! ====================\n")
             email_mes = "Сообщение отправлено"
 
     logging.info(f"-----Whatsapp: {wa_mes}, ------Email: {email_mes}\n")
@@ -262,103 +255,40 @@ async def send_reminder(request: Request, key: str):
 
 @router.post('/send_mail', response_class=HTMLResponse)
 async def mail(request: Request):
+    logging.info(f"==================== send_mail - Отправка почтового сообщения! ====================\n")
     pass
 
 
 @router.post('/send_messege', response_class=HTMLResponse)
 async def send_massege(request: Request):
+    logging.info(f"==================== send_messege - Отправка сообщения! ====================\n")
     pass
 
 
 # Эндпоинт для обработки колбэка от Telegram
 @router.get("/auth/telegram/callback")
 async def telegram_callback(request: Request):
+    logging.info(f"==================== auth - авторизация пользователя через Telegram Login Widget! ====================\n")
     data = request.query_params
     decoded_data = {key: unquote(value) for key, value in data.items()}
-    logging.info(f"================================== telegram_callback ==== data = {data} =======================================\n")
-    print(f"================================== telegram_callback ==== data = {data} =======================================\n")
-    print(f"================================== telegram_callback ==== decoded_data = {decoded_data} =======================================\n")
-    # user_id = data.get("id")
     user_id = decoded_data.get("id")
-    print(f"================================== telegram_callback ==== user_id = {user_id} =======================================\n")
-    logging.info(f"================================== telegram_callback ==== user_id = {user_id} =======================================\n")
-    
     token = settings.bot_token
-
     # Проверка подписи
     if not check_signature(decoded_data, token):
+        logging.info(f"==================== auth - check_signature - ошибка подписи! ====================\n")
         raise HTTPException(status_code=403, detail="Invalid signature")
     
-
-    logging.info(f"====================== telegram_callback ==== settings.allowed_user_ids = {settings.allowed_user_ids} ==========================\n")
-    print(f"====================== telegram_callback ==== settings.allowed_user_ids = {settings.allowed_user_ids} ==========================\n")
     if user_id and int(user_id) in settings.allowed_user_ids:
         await save_dictionary_list_to_cache("user_id", user_id)  # Сохраняем user_id в кэш
         user_id_saved = await get_dictionary_list_from_cashe("user_id")
-        print(f"============ telegram_callback === user_id_saved = {user_id_saved} ===============")
         response = RedirectResponse(url="/")
-        # response.set_cookie(key="user_id", value=user_id)
+        logging.info(f"==================== auth - авторизация прошла успешно! ====================\n")
         return response
     else:
+        logging.info(f"==================== auth - авторизация прошла НЕ успешно! ====================\n")
         raise HTTPException(status_code=403, detail="Unauthorized access")
     
     
-    # data = request.query_params._dict  # Получаем параметры запроса как словарь
-    # if not verify_telegram_signature(data):
-    #     raise HTTPException(status_code=403, detail="Invalid hash")
-    # logging.info(f'==================================data==={data}==========================================\n')
-    # user_id = int(data['id'])
-    # logging.info(f'=================================user_id==={user_id}=======================================\n')
-    # if user_id not in USER_ID:
-    #     logging.info(f'=================================USER_ID==={USER_ID}=======================================\n')
-    #     # raise HTTPException(status_code=403, detail="User not allowed")
-    #     return RedirectResponse(url="/t_login", status_code=status.HTTP_303_SEE_OTHER)
-
-    # # Сохранение user_id в кэше
-    # await save_dictionary_list_to_cache(cache_name="user_cache", dictionary_list=user_id)
-    # logging.info(f'=================================await get_dictionary_list_from_cashe(cache_name="user_cache")==={await get_dictionary_list_from_cashe(cache_name="user_cache")}=======================================\n')
-    # # Установка куки с user_id для дальнейшей аутентификации
-    # response = RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
-    # response.set_cookie(key="user_id", value=str(user_id), httponly=True)
-    # logging.info(f'=================================request.cookies.get("user_id")==={request.cookies.get("user_id")}=======================================\n')
-    # return response
-    # Получаем данные из запроса
-
-    
-    # hash = data.get("hash")
-    
-    # # Удаляем параметр hash из данных для проверки
-    # data_without_hash = dict(data)  # Используем dict() вместо copy()
-    # data_without_hash.pop("hash", None)  # Удаляем hash, если он существует
-    # logging.info(f"==================================== data_without_hash ==={data_without_hash}=======================================\n")
-    # logging.info(f"==================================== data_without_hash ==={data_without_hash}=======================================\n")
-    
-    # # Сортируем параметры по ключам
-    # sorted_data = sorted(data_without_hash.items())
-    
-    # # Создаем строку для проверки
-    # check_string = '\n'.join(f"{key}={value}" for key, value in sorted_data)
-    
-    # # Создаем подпись
-    # secret_key = hashlib.sha256(token.encode()).digest()
-    # generated_hash = hmac.new(secret_key, check_string.encode(), hashlib.sha256).hexdigest()
-    
-    # # Сравниваем хеши
-    # if generated_hash != hash:
-    #     raise HTTPException(status_code=403, detail="Invalid hash")
-    
-    ## Проверяем user_id
-    # user_id = data.get("id")
-    # logging.info(f"==================================== user_id ==={user_id}=======================================\n")
-    # if user_id and int(user_id) in ALLOWED_USER_IDS:
-    #     response = RedirectResponse(url="/")
-    #     response.set_cookie(key="user_id", value=user_id)
-    #     return response
-    # else:
-    #     return RedirectResponse(url="/t_login")
-
-
-
 # @router.post('/send_mail')
 # async def send_mail():
 #     file = await template_processing(lessee, lease_contract_nomber, lease_contract_date)
