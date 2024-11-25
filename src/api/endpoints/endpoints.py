@@ -51,7 +51,7 @@ configure_logging()
 router = APIRouter()
 
 
-async def delete_files():
+def delete_files():
     logging.info(f"==================== delete_files - Запущена очистка папки downloads! ====================\n")
     downloads_dir = BASE_DIR/"downloads"
     # Проверяем, существует ли директория
@@ -110,10 +110,10 @@ async def login(request: Request):
 @router.get("/logout")
 async def logout(request: Request):
     logging.info(f"==================== logout - выход - отчистка кеша, отвязка пользователя! ====================\n")
-    await delete_files()
-    await delete_dictionary_list_from_cache("result_table")
-    await delete_dictionary_list_from_cache("legal_entity")
-    await delete_dictionary_list_from_cache("user_id")
+    delete_files()
+    delete_dictionary_list_from_cache("result_table")
+    delete_dictionary_list_from_cache("legal_entity")
+    delete_dictionary_list_from_cache("user_id")
     return templates.TemplateResponse("index.html", {"request": request})
 
 

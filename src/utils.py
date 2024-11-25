@@ -58,7 +58,7 @@ async def get_dictionary_list_from_cashe(cache_name: str):
         return logging.info(f"==================== get_dictionary_list_from_cashe - завершено НЕ успешно - словарь в кэше НЕ найден! ====================\n")
     
 
-async def delete_dictionary_list_from_cache(cache_name: str):
+def delete_dictionary_list_from_cache(cache_name: str):
     logging.info(f"==================== delete_dictionary_list_from_cache - удаление словаря из кеша! ====================\n")
     if cache_name in cache:
         del cache[cache_name]
