@@ -2,6 +2,7 @@ import datetime as dt
 import logging
 import hmac
 import hashlib
+import os
 # import pyautogui
 import re
 import smtplib
@@ -15,10 +16,15 @@ from fastapi.templating import Jinja2Templates
 from pydantic import EmailStr, ValidationError
 from cachetools import TTLCache
 from urllib.parse import quote
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 from src.constants import (
     MAIL_PORT,
     MAIL_PASSWORD,
-    # BOT_TOKEN,
+    BOT_TOKEN,
+    BASE_DIR,
 )
 from src.configs import configure_logging
 
@@ -116,28 +122,81 @@ async def info_validation(**kwargs):
 
 
 
-# async def wa_message(send_remainder_text: str, phone_number: str):
-#logging.info(f"==================== wa_message - утилита по отправки сообщения через WhatsApp! ====================\n")
-#     send_remainder_text = quote(send_remainder_text)
-#     # phone_pattern = re.compile(r'\+7\d{10}')
-#     # if not re.search(phone_pattern, phone_number):
-#     #     pattern = re.compile(r'\D')
-#     #     c:str = re.sub(pattern, '', phone_number)
-#     #     if len(c) < 10:
-#     #         raise HTTPException(status_code=400, detail="Некорректный номер телефона")
-#     #     nomber = c[-10:]
-#     # phone_number_re = f"+7{nomber}"
-#     # print(f"{phone_number_re}\n")
-#     webbrowser.open(f"https://web.whatsapp.com/send?phone={phone_number}&text={send_remainder_text}")
-#     time.sleep(15)
-#     # screen_width, screen_height = pyautogui.size()
-#     # pyautogui.click(screen_width/2, screen_height/2)
-#     # pyautogui.press("enter")
-#     time.sleep(2)
-#     pyautogui.hotkey("ctrl", "w")
-#     logging.info(f"___Напоминание отправлено на WhatsApp, на номер {phone_number}\n")
-#     return 
+async def wa_message(send_remainder_text: str, phone_number: str):
+    logging.info(f"==================== wa_message - утилита по отправки сообщения через WhatsApp! ====================\n")
+    send_remainder_text = quote(send_remainder_text)
+    phone_pattern = re.compile(r'\+7\d{10}')
+    if not re.search(phone_pattern, phone_number):
+        pattern = re.compile(r'\D')
+        c:str = re.sub(pattern, '', phone_number)
+        if len(c) < 10:
+            raise HTTPException(status_code=400, detail="Некорректный номер телефона")
+        nomber = c[-10:]
+        phone_number_re = f"+7{nomber}"
+        phone_number = phone_number_re
+    
+    try:
+        # Настройка опций для запуска браузера (возможно, безголовый режим)
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")  # Убедитесь, что это отключено при первом запуске для сканирования QR-кода
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
 
+        # Инициализация драйвера
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+
+        # Открытие WhatsApp Web (если сессия активна)
+        driver.get("https://web.whatsapp.com/")
+        
+        time.sleep(5)  # Подождите немного для загрузки
+
+        # Поиск контакта и нажатие на него
+        search_box = driver.find_element("xpath", '//div[@contenteditable="true"][@data-tab="3"]')
+        search_box.click()
+        search_box.send_keys(contact_name)
+        time.sleep(2)  # Подождите, пока контакты загрузятся
+        search_box.send_keys(Keys.ENTER)
+
+        # Поиск поля ввода сообщения и отправка сообщения
+        message_box = driver.find_element("xpath", '//div[@contenteditable="true"][@data-tab="1"]')
+        message_box.click()
+        message_box.send_keys(message)
+        message_box.send_keys(Keys.ENTER)
+        
+        print(f"Сообщение отправлено: {message} для {contact_name}")
+        
+    except Exception as e:
+        print(f"Ошибка при отправке сообщения: {e}")
+    
+    # print(f"{phone_number_re}\n")
+    # webbrowser.open(f"https://web.whatsapp.com/send?phone={phone_number}&text={send_remainder_text}")
+    # time.sleep(15)
+    # screen_width, screen_height = pyautogui.size()
+    # pyautogui.click(screen_width/2, screen_height/2)
+    # pyautogui.press("enter")
+    # time.sleep(2)
+    # pyautogui.hotkey("ctrl", "w")
+    logging.info(f"___Напоминание отправлено на WhatsApp, на номер {phone_number}\n")
+    return
+
+    
+def get_qr_code():
+    qr_code_path = BASE_DIR/"static"/"qr_code"/"qr_code.png"
+    # Настройка опций для запуска браузера
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")  # Безголовый режим
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    # Инициализация драйвера
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    # Открытие WhatsApp Web
+    driver.get("https://web.whatsapp.com/")
+    time.sleep(10)
+    # Получение QR-кода как изображения
+    qr_code_element = driver.find_element("xpath", '//img[@alt="Scan me!"]')
+    qr_code_element.screenshot(qr_code_path)  # Сохранение QR-кода в файл
+    # driver.quit()
+    return qr_code_path
 
 async def email_message(send_remainder_text: str, email: EmailStr | list[EmailStr], ul: list, arenator: str):
     logging.info(f"==================== email_message - утилита по отправки письма! ====================\n")

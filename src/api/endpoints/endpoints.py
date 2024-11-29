@@ -13,6 +13,10 @@ import time
 from fastapi.templating import Jinja2Templates
 from fastapi import APIRouter, Depends, Request, UploadFile, status, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 from urllib.parse import unquote
 from .validators import load_validate
 import shutil
@@ -23,9 +27,10 @@ from src.utils import (
     get_dictionary_list_from_cashe,
     save_dictionary_list_to_cache,
     delete_dictionary_list_from_cache,
-    # wa_message,
+    wa_message,
     email_message,
     info_validation,
+    get_qr_code
     # verify_telegram_signature,
     # get_current_user,
 )
@@ -212,6 +217,7 @@ async def mail(request: Request, current_user: int = Depends(get_current_user)):
 @router.get('/send_reminder/{key}', response_class=HTMLResponse)
 async def send_reminder(request: Request, key: str):
     logging.info(f"==================== send_reminder - Отправка уведомления! ====================\n")
+    qr_code_path = BASE_DIR/"static"/"qr_code"/"qr_code.png"
     dictionary_list = await get_dictionary_list_from_cashe(cache_name="result_table")
     if not dictionary_list or dictionary_list is None:
         raise "Пользователь не найден"
@@ -233,12 +239,14 @@ async def send_reminder(request: Request, key: str):
     wa_mes = "Сообщение не отправлено"
     email_mes = "Сообщение не отправлено"
     if validation_info is not None:
-        # if validation_info["send_remainder_text"] is not None and validation_info["phone_number"] is not None:
-        #     await wa_message(
-        #         send_remainder_text = validation_info["send_remainder_text"],
-        #         phone_number = validation_info["phone_number"],
-        #     )
-        #     wa_mes = "Сообщение отправлено"
+        if validation_info["send_remainder_text"] is not None and validation_info["phone_number"] is not None:
+            if not os.path.exists(qr_code_path):
+                return RedirectResponse(url="/qr_code")
+            await wa_message(
+                send_remainder_text = validation_info["send_remainder_text"],
+                phone_number = validation_info["phone_number"],
+            )
+            wa_mes = "Сообщение отправлено"
         if validation_info["send_remainder_text"] is not None and validation_info["ul"] is not None and validation_info["email"] is not None:
             await email_message(
                 send_remainder_text = validation_info["send_remainder_text"],
@@ -251,6 +259,13 @@ async def send_reminder(request: Request, key: str):
 
     logging.info(f"-----Whatsapp: {wa_mes}, ------Email: {email_mes}\n")
     return f"Whatsapp: {wa_mes}, Email: {email_mes}"
+
+
+@router.get('/qr_code', response_class=HTMLResponse)
+async def qr_code(request: Request, current_user: int = Depends(get_current_user)):
+    logging.info(f"==================== qr_code - Переход на страницу получения QR кода! ====================\n")
+    qr_code_path = get_qr_code()
+    return templates.TemplateResponse("qr_code.html", {"request": request, "user_id": current_user, "qr_code_path": qr_code_path})
 
 
 @router.post('/send_mail', response_class=HTMLResponse)
