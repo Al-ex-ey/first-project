@@ -19,6 +19,7 @@ from urllib.parse import quote
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 from src.constants import (
     MAIL_PORT,
@@ -123,7 +124,7 @@ async def info_validation(**kwargs):
 
 
 async def wa_message(send_remainder_text: str, phone_number: str):
-    logging.info(f"==================== wa_message - утилита по отправки сообщения через WhatsApp! ====================\n")
+    logging.info(f"==================== wa_message - утилита отправки сообщения через WhatsApp! ====================\n")
     send_remainder_text = quote(send_remainder_text)
     phone_pattern = re.compile(r'\+7\d{10}')
     if not re.search(phone_pattern, phone_number):
@@ -136,9 +137,9 @@ async def wa_message(send_remainder_text: str, phone_number: str):
         phone_number = phone_number_re
     
     try:
-        # Настройка опций для запуска браузера (возможно, безголовый режим)
+        # Настройка опций для запуска браузера (безголовый режим)
         chrome_options = Options()
-        chrome_options.add_argument("--headless")  # Убедитесь, что это отключено при первом запуске для сканирования QR-кода
+        chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
 
@@ -148,24 +149,25 @@ async def wa_message(send_remainder_text: str, phone_number: str):
         # Открытие WhatsApp Web (если сессия активна)
         driver.get("https://web.whatsapp.com/")
         
-        time.sleep(5)  # Подождите немного для загрузки
+        time.sleep(5)  # Ждем загрузку
 
-        # Поиск контакта и нажатие на него
+        # Поиск контакта
         search_box = driver.find_element("xpath", '//div[@contenteditable="true"][@data-tab="3"]')
         search_box.click()
-        search_box.send_keys(contact_name)
-        time.sleep(2)  # Подождите, пока контакты загрузятся
+        search_box.send_keys(phone_number)
+        time.sleep(2)  # Ждем загрузку
         search_box.send_keys(Keys.ENTER)
 
         # Поиск поля ввода сообщения и отправка сообщения
         message_box = driver.find_element("xpath", '//div[@contenteditable="true"][@data-tab="1"]')
         message_box.click()
-        message_box.send_keys(message)
+        message_box.send_keys(send_remainder_text)
         message_box.send_keys(Keys.ENTER)
         
-        print(f"Сообщение отправлено: {message} для {contact_name}")
+        logging.info(f"==================== Сообщение {send_remainder_text} для {phone_number} отправлено! ====================\n")
         
     except Exception as e:
+        logging.error(f"Ошибка при отправке сообщения: {e}")
         print(f"Ошибка при отправке сообщения: {e}")
     
     # print(f"{phone_number_re}\n")
@@ -177,7 +179,7 @@ async def wa_message(send_remainder_text: str, phone_number: str):
     # time.sleep(2)
     # pyautogui.hotkey("ctrl", "w")
     logging.info(f"___Напоминание отправлено на WhatsApp, на номер {phone_number}\n")
-    return
+    return status.HTTP_200_OK 
 
     
 def get_qr_code():

@@ -215,7 +215,7 @@ async def mail(request: Request, current_user: int = Depends(get_current_user)):
 
 
 @router.get('/send_reminder/{key}', response_class=HTMLResponse)
-async def send_reminder(request: Request, key: str):
+async def send_reminder(request: Request, key: str,current_user: int = Depends(get_current_user)):
     logging.info(f"==================== send_reminder - Отправка уведомления! ====================\n")
     qr_code_path = BASE_DIR/"static"/"qr_code"/"qr_code.png"
     dictionary_list = await get_dictionary_list_from_cashe(cache_name="result_table")
@@ -241,7 +241,8 @@ async def send_reminder(request: Request, key: str):
     if validation_info is not None:
         if validation_info["send_remainder_text"] is not None and validation_info["phone_number"] is not None:
             if not os.path.exists(qr_code_path):
-                return RedirectResponse(url="/qr_code")
+                # return templates.TemplateResponse("qr_code.html", {"request": request, "user_id": current_user})
+                return RedirectResponse(url="/qr_code", status_code=status.HTTP_303_SEE_OTHER)
             await wa_message(
                 send_remainder_text = validation_info["send_remainder_text"],
                 phone_number = validation_info["phone_number"],
