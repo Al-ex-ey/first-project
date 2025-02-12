@@ -89,13 +89,13 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     else:
         logging.error(f"========== Файл с реестром действующих договоров в директории не обнаружен ==========\n")
 
-    if "Arenda_2024.xlsx" in files_dir:
-        arenda_dir = downloads_dir/"Arenda_2024.xlsx"
+    if "Arenda_2025.xlsx" in files_dir:
+        arenda_dir = downloads_dir/"Arenda_2025.xlsx"
         logging.info(f"==================== parsing_excel - проверка наличия файла аренды прошла успешно! ====================")
     else:
-        logging.error(f"========== Файл Arenda_2024.xlsx в директории не обнаружен ==========\n")
+        logging.error(f"========== Файл Arenda_2025.xlsx в директории не обнаружен ==========\n")
         raise HTTPException(
-            status_code=404, detail="Ошибка! Проверьте, что файл Arenda_2024.xlsx существует, не поврежден и в нем есть страницы!"
+            status_code=404, detail="Ошибка! Проверьте, что файл Arenda_2025.xlsx существует, не поврежден и в нем есть страницы!"
         )
 
     # except Exception:
@@ -300,7 +300,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
 
     path = BASE_DIR/"downloads"
     files_dir = os.listdir(path)
-    if "Arenda_2024.xlsx" in files_dir:
+    if "Arenda_2025.xlsx" in files_dir:
        book_arenda = openpyxl.load_workbook(filename=arenda_dir)
     else:
         raise HTTPException(status_code=404, detail="File not found")
@@ -369,6 +369,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     print("Обратите внимание:\n")
     print(f"\033[1;31;40m ===== Необработанные позиции ===== {not_processed}  \033[0;0m\n")
     print(f"\033[1;31;40m ===== Арендаторы без договоров ===== {arendator_without_contract}  \033[0;0m\n")
+    print(f"\033[1;31;40m ===== Обработанный файл с дебеторкой {arenda_dir} в директории {downloads_dir}  \033[0;0m\n")
 
 
     # print(f"\033[1;{color};40m ========== {AMOUNT_A} строк в выводе из {AMOUNT_ROW} (арендаторы в файле аренда) ========== \033[0;0m\n")

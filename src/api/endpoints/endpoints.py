@@ -123,25 +123,25 @@ async def logout(request: Request):
 
 
 @router.get('/', response_class=HTMLResponse)
-async def index(request: Request, current_user: int = Depends(get_current_user)):
+async def index(request: Request):
     logging.info(f"==================== index - переход на главную страницу! ====================\n")
-    return templates.TemplateResponse("index.html", {"request": request, "user_id": current_user})
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @router.get('/result', response_class=HTMLResponse)
-async def result(request: Request, current_user: int = Depends(get_current_user)):
+async def result(request: Request):
     logging.info(f"==================== result - перенаправление на страницу с результатом обработки файлов! ====================\n")
-    return templates.TemplateResponse("result.html", {"request": request, "user_id": current_user})
+    return templates.TemplateResponse("result.html", {"request": request})
 
 
 @router.get('/files', response_class=HTMLResponse)
-async def upload (request: Request, current_user: int = Depends(get_current_user)):
+async def upload (request: Request):
     logging.info(f"==================== files - перенаправление на страницу загрузки файлов! ====================\n")
-    return templates.TemplateResponse("upload_files.html", {"request": request, "user_id": current_user})
+    return templates.TemplateResponse("upload_files.html", {"request": request})
 
 
 @router.post('/upload_files', response_class=HTMLResponse)
-async def upload_files(files: list[UploadFile], request: Request, error_message: str = None, current_user: int = Depends(get_current_user)):
+async def upload_files(files: list[UploadFile], request: Request, error_message: str = None):
     logging.info(f"==================== upload_files - загрузка файлов для обработки! ====================\n")
     load_validate(files)
     file_list = []
@@ -169,12 +169,12 @@ async def upload_files(files: list[UploadFile], request: Request, error_message:
     files_dir = os.listdir(path)
     if "Arenda_2024.xlsx" in files_dir:
         logging.info(f"==================== upload_files - завершено успешно! ====================\n")
-        return templates.TemplateResponse("result.html", status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "query_params": query_params, "user_id": current_user})
+        return templates.TemplateResponse("result.html", status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "query_params": query_params})
     return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get('/download_file')
-async def download_file(request: Request, current_user: int = Depends(get_current_user)):
+async def download_file(request: Request):
     logging.info(f"==================== download_file - скачать обработанный файл! ====================\n")
     downloads_dir = BASE_DIR/"downloads"
     downloads_dir.mkdir(exist_ok=True)
@@ -182,17 +182,18 @@ async def download_file(request: Request, current_user: int = Depends(get_curren
     if "Arenda_2024.xlsx" in files_dir:
         try:
             logging.info(f"==================== download_file - завершено успешно! ====================\n")
-            return FileResponse(f"{downloads_dir}/Arenda_2024.xlsx", media_type = "xlsx", filename="Arenda_2024.xlsx")
+            return FileResponse(f"{downloads_dir}/Arenda_2025.xlsx", media_type = "xlsx", filename="Arenda_2025.xlsx")
         except Exception as e:
             raise FileNotFoundError(f"File in not found")
     else:
         logging.info(f"==================== download_file - завершено НЕ успешно! ====================\n")
     # return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
-    return templates.TemplateResponse("index.html", {"request": request, "user_id": current_user})
+    return templates.TemplateResponse("index.html", {"request": request})
     
     
 @router.get('/download_logs')
-async def download_logs(request: Request, current_user: int = Depends(get_current_user)):
+async def download_logs(request: Request):
+# async def download_logs(request: Request, current_user: int = Depends(get_current_user)):
     logging.info(f"==================== download_logs - скачать логи! ====================\n")
     logs_dir = BASE_DIR/"logs"
     logs_dir.mkdir(exist_ok=True)
@@ -205,17 +206,21 @@ async def download_logs(request: Request, current_user: int = Depends(get_curren
     else:
         logging.info(f"==================== download_logs - завершено НЕ успешно! ====================\n")
     # return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
-    return templates.TemplateResponse("index.html", {"request": request, "user_id": current_user})
+    return templates.TemplateResponse("index.html", {"request": request})
+    # return templates.TemplateResponse("index.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/mail', response_class=HTMLResponse)
-async def mail(request: Request, current_user: int = Depends(get_current_user)):
+async def mail(request: Request):
+# async def mail(request: Request, current_user: int = Depends(get_current_user)):
     logging.info(f"==================== mail - Переход на страницу отправки почты! ====================\n")
-    return templates.TemplateResponse("mail.html", {"request": request, "user_id": current_user})
+    return templates.TemplateResponse("mail.html", {"request": request})
+    # return templates.TemplateResponse("mail.html", {"request": request, "user_id": current_user})
 
 
 @router.get('/send_reminder/{key}', response_class=HTMLResponse)
-async def send_reminder(request: Request, key: str,current_user: int = Depends(get_current_user)):
+async def send_reminder(request: Request, key: str):
+# async def send_reminder(request: Request, key: str,current_user: int = Depends(get_current_user)):
     logging.info(f"==================== send_reminder - Отправка уведомления! ====================\n")
     qr_code_path = BASE_DIR/"static"/"qr_code"/"qr_code.png"
     dictionary_list = await get_dictionary_list_from_cashe(cache_name="result_table")
@@ -263,10 +268,12 @@ async def send_reminder(request: Request, key: str,current_user: int = Depends(g
 
 
 @router.get('/qr_code', response_class=HTMLResponse)
-async def qr_code(request: Request, current_user: int = Depends(get_current_user)):
+async def qr_code(request: Request):
+# async def qr_code(request: Request, current_user: int = Depends(get_current_user)):
     logging.info(f"==================== qr_code - Переход на страницу получения QR кода! ====================\n")
     qr_code_path = get_qr_code()
-    return templates.TemplateResponse("qr_code.html", {"request": request, "user_id": current_user, "qr_code_path": qr_code_path})
+    return templates.TemplateResponse("qr_code.html", {"request": request, "qr_code_path": qr_code_path})
+    # return templates.TemplateResponse("qr_code.html", {"request": request, "user_id": current_user, "qr_code_path": qr_code_path})
 
 
 @router.post('/send_mail', response_class=HTMLResponse)
