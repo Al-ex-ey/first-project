@@ -12,7 +12,7 @@ from fastapi.responses import RedirectResponse
 # from openpyxl.styles.differential import DifferentialStyle
 # from openpyxl.formatting.rule import Rule
 from openpyxl.styles import NamedStyle, Alignment, Font, Border, Side, PatternFill
-from src.configs import configure_logging
+from src.configs import configure_logging, settings
 from src.constants import (
     AMOUNT_ROW,
     AMOUNT_A,
@@ -89,13 +89,13 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     else:
         logging.error(f"========== Файл с реестром действующих договоров в директории не обнаружен ==========\n")
 
-    if "Arenda_2025.xlsx" in files_dir:
-        arenda_dir = downloads_dir/"Arenda_2025.xlsx"
+    if settings.file_name in files_dir:
+        arenda_dir = downloads_dir/settings.file_name
         logging.info(f"==================== parsing_excel - проверка наличия файла аренды прошла успешно! ====================")
     else:
-        logging.error(f"========== Файл Arenda_2025.xlsx в директории не обнаружен ==========\n")
+        logging.error(f"========== Файл {settings.file_name} в директории не обнаружен ==========\n")
         raise HTTPException(
-            status_code=404, detail="Ошибка! Проверьте, что файл Arenda_2025.xlsx существует, не поврежден и в нем есть страницы!"
+            status_code=404, detail="Ошибка! Проверьте, что файлы существуют, не поврежденв и в них есть страницы!"
         )
 
     # except Exception:
@@ -300,7 +300,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
 
     path = BASE_DIR/"downloads"
     files_dir = os.listdir(path)
-    if "Arenda_2025.xlsx" in files_dir:
+    if settings.file_name in files_dir:
        book_arenda = openpyxl.load_workbook(filename=arenda_dir)
     else:
         raise HTTPException(status_code=404, detail="File not found")

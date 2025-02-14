@@ -128,10 +128,21 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-@router.get('/result', response_class=HTMLResponse)
-async def result(request: Request):
-    logging.info(f"==================== result - перенаправление на страницу с результатом обработки файлов! ====================\n")
-    return templates.TemplateResponse("result.html", {"request": request})
+@router.get('/debtors', response_class=HTMLResponse)
+async def debtors(request: Request):
+    query_params = await get_dictionary_list_from_cashe("debtors_result")
+    if query_params is None:
+        logging.info(f"==================== Словарь с обработанными данными не найдена! ====================\n")
+        return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
+    logging.info(f"==================== debtors - перенаправление на страницу работы с дебеторкой! ====================\n")
+    return templates.TemplateResponse("result.html", status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "query_params": query_params})
+
+
+@router.get('/reconciliation_statement', response_class=HTMLResponse)
+async def reconciliation_statement(request: Request):
+    
+    logging.info(f"==================== reconciliation_statement - перенаправление на страницу работы с актами сверки! ====================\n")
+    return templates.TemplateResponse("reconciliation_statement.html", {"request": request})
 
 
 @router.get('/files', response_class=HTMLResponse)
@@ -160,6 +171,7 @@ async def upload_files(files: list[UploadFile], request: Request, error_message:
     except Exception:
         raise HTTPException(status_code=404, detail="Ошибка. Проверьте, что файл существует, не поврежден, не защищен от записи и в нем есть страницы!")
 
+    await save_dictionary_list_to_cache(cache_name="debtors_result", dictionary_list=query_params)
     result_table: list = query_params.get("result_table", [])
     await save_dictionary_list_to_cache(cache_name="result_table", dictionary_list=result_table)
     legal_entity: list = LEGAL_ENTITY
@@ -167,9 +179,11 @@ async def upload_files(files: list[UploadFile], request: Request, error_message:
 
     path = BASE_DIR/"downloads"
     files_dir = os.listdir(path)
-    if "Arenda_2024.xlsx" in files_dir:
+    if settings.file_name in files_dir:
         logging.info(f"==================== upload_files - завершено успешно! ====================\n")
+        logging.info(f"==================== upload_files - перенаправление на страницу с результатом обработки файлов! ====================\n")
         return templates.TemplateResponse("result.html", status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "query_params": query_params})
+    logging.info(f"==================== upload_files - ЧТО ТО ПОШЛО НЕ ТАК, перенаправление на страницу с результатом обработки файлов НЕ произошло! ====================\n")
     return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -179,10 +193,10 @@ async def download_file(request: Request):
     downloads_dir = BASE_DIR/"downloads"
     downloads_dir.mkdir(exist_ok=True)
     files_dir = os.listdir(downloads_dir)
-    if "Arenda_2024.xlsx" in files_dir:
+    if settings.file_name in files_dir:
         try:
             logging.info(f"==================== download_file - завершено успешно! ====================\n")
-            return FileResponse(f"{downloads_dir}/Arenda_2025.xlsx", media_type = "xlsx", filename="Arenda_2025.xlsx")
+            return FileResponse(downloads_dir/settings.file_name, media_type = "xlsx", filename=settings.file_name)
         except Exception as e:
             raise FileNotFoundError(f"File in not found")
     else:
