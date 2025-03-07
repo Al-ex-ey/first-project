@@ -123,7 +123,7 @@ async def info_validation(**kwargs):
 
 
 
-async def wa_message(send_remainder_text: str, phone_number: str):
+def wa_message(send_remainder_text: str, phone_number: str):
     logging.info(f"==================== wa_message - утилита отправки сообщения через WhatsApp! ====================\n")
     send_remainder_text = quote(send_remainder_text)
     phone_pattern = re.compile(r'\+7\d{10}')
@@ -183,6 +183,7 @@ async def wa_message(send_remainder_text: str, phone_number: str):
 
     
 def get_qr_code():
+    logging.info(f"==================== get_qr_code - утилита для парсинга qr-code! ====================\n")
     qr_code_path = BASE_DIR/"static"/"qr_code"/"qr_code.png"
     # Настройка опций для запуска браузера
     chrome_options = Options()
@@ -198,9 +199,10 @@ def get_qr_code():
     qr_code_element = driver.find_element("xpath", '//img[@alt="Scan me!"]')
     qr_code_element.screenshot(qr_code_path)  # Сохранение QR-кода в файл
     # driver.quit()
+    logging.info(f"==================== get_qr_code - qr-code создан! ====================\n")
     return qr_code_path
 
-async def email_message(send_remainder_text: str, email: EmailStr | list[EmailStr], ul: list, arenator: str):
+def email_message(send_remainder_text: str, email: EmailStr | list[EmailStr], ul: list, arenator: str):
     logging.info(f"==================== email_message - утилита по отправки письма! ====================\n")
     # print(f"{email} --- {send_remainder_text} --- {ul} --- {arenator}\n")
     # ul_list = await get_dictionary_list_from_cashe(cache_name="legal_entity")

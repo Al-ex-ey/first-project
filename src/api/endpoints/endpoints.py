@@ -246,30 +246,33 @@ async def send_reminder(request: Request, key: str):
         if key == next(iter(i)):
             selected_dict = i
             break
-
+    logging.info(f"============== send_reminder ====== selected_dict = {selected_dict} ====================\n")
+    logging.info(f"============== send_reminder ====== dictionary_list = {dictionary_list} ====================\n")
     if not selected_dict or selected_dict is None:
-        raise "Сообщение не отправлено"
+        raise "Сообщение не отправлено словарь не найден"
     arenator = selected_dict[key][0]
-    email = selected_dict[key][3]
-    phone_number = selected_dict[key][4]
-    ul = selected_dict[key][5]
+    email = selected_dict[key][4]
+    phone_number = selected_dict[key][5]
+    ul = selected_dict[key][9]
     send_remainder_text = f"Тест: Сообщение отправлено через web project для {arenator}"
 
     validation_info = await info_validation(email = email, phone_number = phone_number, ul = ul, send_remainder_text = send_remainder_text)
+    logging.info(f"============== send_reminder ====== {validation_info} ====================\n")
     wa_mes = "Сообщение не отправлено"
     email_mes = "Сообщение не отправлено"
     if validation_info is not None:
         if validation_info["send_remainder_text"] is not None and validation_info["phone_number"] is not None:
             if not os.path.exists(qr_code_path):
+                logging.info(f"==================== send_reminder - Отправка уведомления! qr_code - не найден!====================\n")
                 # return templates.TemplateResponse("qr_code.html", {"request": request, "user_id": current_user})
                 return RedirectResponse(url="/qr_code", status_code=status.HTTP_303_SEE_OTHER)
-            await wa_message(
+            wa_message(
                 send_remainder_text = validation_info["send_remainder_text"],
                 phone_number = validation_info["phone_number"],
             )
             wa_mes = "Сообщение отправлено"
         if validation_info["send_remainder_text"] is not None and validation_info["ul"] is not None and validation_info["email"] is not None:
-            await email_message(
+            email_message(
                 send_remainder_text = validation_info["send_remainder_text"],
                 email = validation_info["email"],
                 ul = validation_info["ul"],

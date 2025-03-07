@@ -211,7 +211,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     #         break
 
     """ Цикл сравнения книги арендаторов с книгой дебеторки"""
-    for i in tqdm(range(1, AMOUNT_ROW_TOTAL), desc="Wait a going process"):
+    for i in range(1, AMOUNT_ROW_TOTAL):
         arendator_cell = sheet_arenda.cell(row=i, column=1)
         arendator = arendator_cell.value
         
