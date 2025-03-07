@@ -118,6 +118,7 @@ async def logout(request: Request):
     delete_files()
     delete_dictionary_list_from_cache("result_table")
     delete_dictionary_list_from_cache("legal_entity")
+    delete_dictionary_list_from_cache("debtors_result")
     delete_dictionary_list_from_cache("user_id")
     return templates.TemplateResponse("index.html", {"request": request})
 
@@ -132,7 +133,7 @@ async def index(request: Request):
 async def debtors(request: Request):
     query_params = await get_dictionary_list_from_cashe("debtors_result")
     if query_params is None:
-        logging.info(f"==================== Словарь с обработанными данными не найдена! ====================\n")
+        logging.info(f"==================== debtors - Словарь с обработанными данными не найдена! ====================\n")
         return RedirectResponse(url=router.url_path_for("index"), status_code=status.HTTP_303_SEE_OTHER)
     logging.info(f"==================== debtors - перенаправление на страницу работы с дебеторкой! ====================\n")
     return templates.TemplateResponse("result.html", status_code=status.HTTP_303_SEE_OTHER, context={"request": request, "query_params": query_params})

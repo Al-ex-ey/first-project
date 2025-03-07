@@ -7,3 +7,4 @@ src/send_files
 __pycache__/
 .venv
 .vscode/
+.downloads/
