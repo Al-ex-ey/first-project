@@ -1,5 +1,11 @@
 FROM python:3.11.8-slim
 
+RUN apt-get update && apt-get install -y \
+    chromium \
+    chromium-driver \
+    wget \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 COPY requirements.txt .

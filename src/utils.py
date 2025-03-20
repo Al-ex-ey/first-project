@@ -20,7 +20,10 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+# from webdriver_manager.chrome import ChromeDriverManager
 from src.constants import (
     MAIL_PORT,
     MAIL_PASSWORD,
@@ -85,14 +88,21 @@ async def info_validation(**kwargs):
 
     if 'phone_number' in kwargs:
         phone_number = kwargs['phone_number']
-        if isinstance(phone_number, str):
-            pattern = re.compile(r'\D')
-            c:str = re.sub(pattern, '', phone_number)
-            if len(c) >= 10:
-                number = c[-10:]
-                phone_number_re = f"+7{number}"
-                validation_info["phone_number"] = phone_number_re
-                logging.info(f"==================== info_validation - проверка номера телефона завершена успешно! ====================\n")
+        logging.info(f"==================== info_validation === phone_number: {phone_number} ====================\n")
+        phone_number = str(phone_number)
+        pattern = re.compile(r'\D')
+        c = re.sub(pattern, '', phone_number)
+        logging.info(f"==================== info_validation === c: {c} ====================\n")
+        if len(c) >= 10:
+            number = c[-10:]
+            phone_number_re = f"+7{number}"
+            validation_info["phone_number"] = phone_number_re
+            logging.info(f"==================== info_validation === phone_number_re: {phone_number_re} ====================\n")
+            logging.info(f"==================== info_validation - проверка номера телефона завершена успешно! ====================\n")
+        else:
+            logging.info(f"==================== info_validation - проверка номера телефона ПРОВАЛЕНА! Кол-во цифр в номере меньше стандарта !====================\n")    
+    else:
+        logging.info(f"==================== info_validation - ппроверка номера телефона ПРОВАЛЕНА! Параметр не передан!====================\n")
 
     if 'send_remainder_text' in kwargs:
         send_remainder_text = kwargs['send_remainder_text']
@@ -142,9 +152,11 @@ def wa_message(send_remainder_text: str, phone_number: str):
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--remote-debugging-port=9222")
 
         # Инициализация драйвера
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+        driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options)
 
         # Открытие WhatsApp Web (если сессия активна)
         driver.get("https://web.whatsapp.com/")
@@ -187,18 +199,36 @@ def get_qr_code():
     qr_code_path = BASE_DIR/"static"/"qr_code"/"qr_code.png"
     # Настройка опций для запуска браузера
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Безголовый режим
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--remote-debugging-port=9222")
+    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+    
+    chrome_options.binary_location = "/usr/bin/chromium"
     # Инициализация драйвера
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options)
     # Открытие WhatsApp Web
     driver.get("https://web.whatsapp.com/")
     time.sleep(10)
     # Получение QR-кода как изображения
-    qr_code_element = driver.find_element("xpath", '//img[@alt="Scan me!"]')
-    qr_code_element.screenshot(qr_code_path)  # Сохранение QR-кода в файл
-    # driver.quit()
+    # qr_code_element = driver.find_element("xpath", '//img[@alt="Scan me!"]')
+    # qr_code_element = driver.find_element(By.XPATH, "//canvas[@aria-label='Scan me!']")
+    # try:
+    #     qr_code_element = WebDriverWait(driver, 30).until(
+    #         EC.presence_of_element_located((By.XPATH, "//canvas[@aria-label='Scan me!']"))
+    #     )
+    # except Exception as e:
+    #     print("QR-код не найден:", e)
+    # # qr_code_element.screenshot(qr_code_path)  # Сохранение QR-кода в файл
+    # qr_code_screenshot = qr_code_element.screenshot_as_png
+    # with open(qr_code_path, "wb") as f:
+    #     f.write(qr_code_screenshot)
+    driver.save_screenshot(qr_code_path)
+    
+    driver.quit()
     logging.info(f"==================== get_qr_code - qr-code создан! ====================\n")
     return qr_code_path
 

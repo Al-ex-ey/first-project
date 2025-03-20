@@ -376,7 +376,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     # print(f"Аредаторы без договоров____{lost_contracts}\n")
     # print(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
     # # print(f"Аредаторы с некорректными договорами: {incorrect_contracts}\n")
-    logging.info(f"\033[1;{color};40m ===== {AMOUNT_A} обработанных строк из {AMOUNT_ROW}  ===== в том числе {amount_wrong_row} строк(а) без обработки ===== \033[0;0m\n")
+    logging.info(f" ===== {AMOUNT_A} обработанных строк из {AMOUNT_ROW}  ===== в том числе {amount_wrong_row} строк без обработки ===== \n")
     # logging.info(f"Аредаторы без договоров____{lost_contracts}\n")
     # logging.info(f"Аредаторы отсутствующте в фале дебеторки - {arendators_not_in_debet_list}\n")
     # # logging.info(f"Аредаторы с некорректными договорами: {incorrect_contracts}\n")

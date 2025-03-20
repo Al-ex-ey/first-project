@@ -238,18 +238,21 @@ async def send_reminder(request: Request, key: str):
 # async def send_reminder(request: Request, key: str,current_user: int = Depends(get_current_user)):
     logging.info(f"==================== send_reminder - Отправка уведомления! ====================\n")
     qr_code_path = BASE_DIR/"static"/"qr_code"/"qr_code.png"
+    qr_code_path.mkdir(exist_ok=True)
     dictionary_list = await get_dictionary_list_from_cashe(cache_name="result_table")
     if not dictionary_list or dictionary_list is None:
-        raise "Пользователь не найден"
+        logging.info(f"==================== send_reminder - словарь с пользователями не найден или закончился срок хранения в кеше! ====================\n")
+        return templates.TemplateResponse("index.html", {"request": request})
     selected_dict: dict = None
     for i in dictionary_list:
         if key == next(iter(i)):
             selected_dict = i
             break
-    logging.info(f"============== send_reminder ====== selected_dict = {selected_dict} ====================\n")
-    logging.info(f"============== send_reminder ====== dictionary_list = {dictionary_list} ====================\n")
+    logging.info(f"============== send_reminder ====== selected_dict: {selected_dict} ====================\n")
+    logging.info(f"============== send_reminder ====== dictionary_list: {dictionary_list} ====================\n")
     if not selected_dict or selected_dict is None:
-        raise "Сообщение не отправлено словарь не найден"
+        logging.info(f"==================== send_reminder - сообщение не отправлено, пользователь с словаре не найден! ====================\n")
+        return templates.TemplateResponse("index.html", {"request": request})
     arenator = selected_dict[key][0]
     email = selected_dict[key][4]
     phone_number = selected_dict[key][5]
@@ -257,29 +260,30 @@ async def send_reminder(request: Request, key: str):
     send_remainder_text = f"Тест: Сообщение отправлено через web project для {arenator}"
 
     validation_info = await info_validation(email = email, phone_number = phone_number, ul = ul, send_remainder_text = send_remainder_text)
-    logging.info(f"============== send_reminder ====== {validation_info} ====================\n")
+    logging.info(f"============== send_reminder ====== validation_info: {validation_info} ====================\n")
     wa_mes = "Сообщение не отправлено"
     email_mes = "Сообщение не отправлено"
-    if validation_info is not None:
-        if validation_info["send_remainder_text"] is not None and validation_info["phone_number"] is not None:
-            if not os.path.exists(qr_code_path):
-                logging.info(f"==================== send_reminder - Отправка уведомления! qr_code - не найден!====================\n")
-                # return templates.TemplateResponse("qr_code.html", {"request": request, "user_id": current_user})
-                return RedirectResponse(url="/qr_code", status_code=status.HTTP_303_SEE_OTHER)
-            wa_message(
-                send_remainder_text = validation_info["send_remainder_text"],
-                phone_number = validation_info["phone_number"],
-            )
-            wa_mes = "Сообщение отправлено"
-        if validation_info["send_remainder_text"] is not None and validation_info["ul"] is not None and validation_info["email"] is not None:
-            email_message(
-                send_remainder_text = validation_info["send_remainder_text"],
-                email = validation_info["email"],
-                ul = validation_info["ul"],
-                arenator = arenator,
-            )
-            logging.info(f"==================== send_reminder - Отправка уведомления для пользователя {arenator} выполнена! ====================\n")
-            email_mes = "Сообщение отправлено"
+    if validation_info["send_remainder_text"] is not None and validation_info["phone_number"] is not None:
+        qr_code_in_dir = os.listdir(qr_code_path)
+        if "qr_code.png" not in qr_code_in_dir:
+            logging.info(f"==================== send_reminder - Отправка уведомления! qr_code - не найден! редирект на получение qr-code! ====================\n")
+            # return templates.TemplateResponse("qr_code.html", {"request": request, "user_id": current_user})
+            return RedirectResponse(url="/qr_code", status_code=status.HTTP_303_SEE_OTHER)
+        wa_message(
+            send_remainder_text = validation_info["send_remainder_text"],
+            phone_number = validation_info["phone_number"],
+        )
+        wa_mes = "Сообщение отправлено"
+    logging.info(f"===== send_reminder - WA сообщение не отправлено, отсутствует send_remainder_text = {send_remainder_text} или phone_number = {phone_number}! =====\n")
+    if validation_info["send_remainder_text"] is not None and validation_info["ul"] is not None and validation_info["email"] is not None:
+        email_message(
+            send_remainder_text = validation_info["send_remainder_text"],
+            email = validation_info["email"],
+            ul = validation_info["ul"],
+            arenator = arenator,
+        )
+        logging.info(f"==================== send_reminder - Отправка уведомления для пользователя {arenator} выполнена! ====================\n")
+        email_mes = "Сообщение отправлено"
 
     logging.info(f"-----Whatsapp: {wa_mes}, ------Email: {email_mes}\n")
     return f"Whatsapp: {wa_mes}, Email: {email_mes}"
@@ -290,8 +294,13 @@ async def qr_code(request: Request):
 # async def qr_code(request: Request, current_user: int = Depends(get_current_user)):
     logging.info(f"==================== qr_code - Переход на страницу получения QR кода! ====================\n")
     qr_code_path = get_qr_code()
-    return templates.TemplateResponse("qr_code.html", {"request": request, "qr_code_path": qr_code_path})
+    if qr_code_path:
+        logging.info(f"==================== qr_code - QR код найден, переход на html страницу для вывода! ====================\n")
+        return templates.TemplateResponse("qr_code.html", {"request": request, "qr_code_path": qr_code_path})
+        
+    logging.info(f"==================== qr_code - QR код не найден, редирект на страницу с результатами! ====================\n")
     # return templates.TemplateResponse("qr_code.html", {"request": request, "user_id": current_user, "qr_code_path": qr_code_path})
+    return RedirectResponse(url="/debtors", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post('/send_mail', response_class=HTMLResponse)
