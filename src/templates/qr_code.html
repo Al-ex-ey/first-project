@@ -11,22 +11,25 @@
 <body>
     <div class="container mt-5">
 
-        <img src="{qr_code_path}" alt="QR Code" />
+        <h3>Отсканируйте этот QR-код в приложении WhatsApp на вашем телефоне.</h2>
+        <img src="{{ url_for('static', path='qr_code/qr_code.png') }}" alt="WhatsApp QR Code">
+        <!-- <a href="/send-message"><button>Я отсканировал QR-код</button></a> -->
 
         <ul class="nav nav-pills">
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('result') }}">Done</a>
+              <a class="nav-link" href="{{ url_for('debtors') }}">Я отсканировал QR-код</a>
             </li>
         </ul>
+
+        <form method="post" action="/clear_qr_code">
+            <div class="card-action">
+                <button class="btn btn-outline-primary" type="submit" id="submitButton">Удалить QR QR-код</button>
+            </div>
+        </form>
 
         {% include "footer.html" %}
     </div>
 </body>
-
-<!-- <body>
-    <h1>Отсканируйте QR-код для авторизации в WhatsApp</h1>
-    <img id="qr-code" src="/get_qr_code" alt="QR Code">
-</body> -->
 
 </html>
 

@@ -1,4 +1,5 @@
 import datetime as dt
+
 import logging
 import hmac
 import hashlib
@@ -7,15 +8,20 @@ import os
 import re
 import smtplib
 import time
+import random
 import  webbrowser
+
+from datetime import datetime, timedelta
 from enum import Enum
 from email.message import EmailMessage
-from fastapi import APIRouter, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import EmailStr, ValidationError
 from cachetools import TTLCache
 from urllib.parse import quote
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -23,12 +29,14 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-# from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.chrome import ChromeDriverManager
+
 from src.constants import (
     MAIL_PORT,
     MAIL_PASSWORD,
     BOT_TOKEN,
     BASE_DIR,
+    DATE_NOW,
 )
 from src.configs import configure_logging
 
@@ -37,6 +45,8 @@ templates = Jinja2Templates(directory="src/templates")
 cache = TTLCache(maxsize=3, ttl=3600)
 configure_logging()
 now = dt.datetime.now()
+date = now.strftime(DATE_NOW)
+
 
 router = APIRouter()
 
@@ -66,7 +76,7 @@ async def get_dictionary_list_from_cashe(cache_name: str):
         return cache[cache_name]
     else:
         return logging.info(f"==================== get_dictionary_list_from_cashe - завершено НЕ успешно - словарь в кэше НЕ найден! ====================\n")
-    
+
 
 def delete_dictionary_list_from_cache(cache_name: str):
     logging.info(f"==================== delete_dictionary_list_from_cache - удаление словаря из кеша! ====================\n")
@@ -75,7 +85,7 @@ def delete_dictionary_list_from_cache(cache_name: str):
         logging.info(f"==================== delete_dictionary_list_from_cache - завершено успешно - {cache_name} словарь удален! ====================\n")
     else:
         logging.info(f"==================== delete_dictionary_list_from_cache - завершено НЕ успешно - {cache_name} словарь не найден! ====================\n")
-    
+
 
 async def info_validation(**kwargs):
     logging.info(f"==================== info_validation - проверка параметров! ====================\n")
@@ -100,7 +110,7 @@ async def info_validation(**kwargs):
             logging.info(f"==================== info_validation === phone_number_re: {phone_number_re} ====================\n")
             logging.info(f"==================== info_validation - проверка номера телефона завершена успешно! ====================\n")
         else:
-            logging.info(f"==================== info_validation - проверка номера телефона ПРОВАЛЕНА! Кол-во цифр в номере меньше стандарта !====================\n")    
+            logging.info(f"==================== info_validation - проверка номера телефона ПРОВАЛЕНА! Кол-во цифр в номере меньше стандарта !====================\n")
     else:
         logging.info(f"==================== info_validation - ппроверка номера телефона ПРОВАЛЕНА! Параметр не передан!====================\n")
 
@@ -122,7 +132,7 @@ async def info_validation(**kwargs):
             if ul_list and ul_list is not None:
                 if ul in (org.value for org in Organizations):
                     ul_name = Organizations(ul).name
-                    le: list = None 
+                    le: list = None
                     for key in ul_list.keys():
                         if key == ul_name:
                             le = ul_list[key]
@@ -133,55 +143,84 @@ async def info_validation(**kwargs):
 
 
 
-def wa_message(send_remainder_text: str, phone_number: str):
-    logging.info(f"==================== wa_message - утилита отправки сообщения через WhatsApp! ====================\n")
+def wa_message(request: Request, send_remainder_text: str, phone_number: str):
+    logging.info(f"==================== wa_message - старт утилиты отправки сообщения через WhatsApp! ====================\n")
     send_remainder_text = quote(send_remainder_text)
-    phone_pattern = re.compile(r'\+7\d{10}')
-    if not re.search(phone_pattern, phone_number):
-        pattern = re.compile(r'\D')
-        c:str = re.sub(pattern, '', phone_number)
-        if len(c) < 10:
-            raise HTTPException(status_code=400, detail="Некорректный номер телефона")
-        nomber = c[-10:]
-        phone_number_re = f"+7{nomber}"
-        phone_number = phone_number_re
-    
+    # phone_pattern = re.compile(r'\+7\d{10}')
+    # if not re.search(phone_pattern, phone_number):
+    #     pattern = re.compile(r'\D')
+    #     c:str = re.sub(pattern, '', phone_number)
+    #     if len(c) < 10:
+    #         raise HTTPException(status_code=400, detail="Некорректный номер телефона")
+    #     nomber = c[-10:]
+    #     phone_number_re = f"+7{nomber}"
+    #     phone_number = phone_number_re
+
+
+    # driver = get_chrome_driver()
+    driver = request.app.state.whatsapp_driver
+    if not driver:
+        logging.info(f"==================== wa_message - драйвер не найден, редирект для сканирования qr-кода! ====================\n")
+        return RedirectResponse(url="/qr_code", status_code=status.HTTP_303_SEE_OTHER)
+
+    delay_sec: float = 2.0
+        
     try:
-        # Настройка опций для запуска браузера (безголовый режим)
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--remote-debugging-port=9222")
-
-        # Инициализация драйвера
-        driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options)
-
-        # Открытие WhatsApp Web (если сессия активна)
-        driver.get("https://web.whatsapp.com/")
+        # 1. Открываем чат напрямую (надежнее поиска)
+        driver.get(f"https://web.whatsapp.com/send?phone={phone_number}")
         
-        time.sleep(5)  # Ждем загрузку
-
-        # Поиск контакта
-        search_box = driver.find_element("xpath", '//div[@contenteditable="true"][@data-tab="3"]')
-        search_box.click()
-        search_box.send_keys(phone_number)
-        time.sleep(2)  # Ждем загрузку
-        search_box.send_keys(Keys.ENTER)
-
-        # Поиск поля ввода сообщения и отправка сообщения
-        message_box = driver.find_element("xpath", '//div[@contenteditable="true"][@data-tab="1"]')
-        message_box.click()
-        message_box.send_keys(send_remainder_text)
-        message_box.send_keys(Keys.ENTER)
+        # 2. Ожидание полной загрузки чата
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, '//div[@data-testid="conversation-panel-body"]'))
+        )
         
-        logging.info(f"==================== Сообщение {send_remainder_text} для {phone_number} отправлено! ====================\n")
+        # 3. Поиск поля ввода (с явными проверками)
+        input_box = WebDriverWait(driver, 15).until(
+            EC.element_to_be_clickable((By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]'))
+        )
         
+        # 4. Эмуляция человеческого ввода
+        time.sleep(delay_sec)
+        for chunk in [send_remainder_text[i:i+100] for i in range(0, len(send_remainder_text), 100)]:
+            input_box.send_keys(chunk)
+            time.sleep(0.2)
+        
+        # 5. Отправка
+        input_box.send_keys(Keys.ENTER)
+        time.sleep(delay_sec)
+        
+        # 6. Проверка отправки (опционально)
+        # WebDriverWait(driver, 10).until(
+        #     EC.presence_of_element_located((By.XPATH, '//span[@data-testid="msg-dblcheck"]'))
+        # )
+    
+    # except Exception as e:
+    #     print(f"Ошибка отправки: {str(e)}")
+    #     return False
+
+        # driver.get("https://web.whatsapp.com/")
+
+        # time.sleep(random.uniform(8, 12))
+
+        # # Поиск контакта
+        # search_box = driver.find_element("xpath", '//div[@contenteditable="true"][@data-tab="3"]')
+        # search_box.click()
+        # search_box.send_keys(phone_number)
+        # time.sleep(2)  # Ждем загрузку
+        # search_box.send_keys(Keys.ENTER)
+
+        # # Поиск поля ввода сообщения и отправка сообщения
+        # message_box = driver.find_element("xpath", '//div[@contenteditable="true"][@data-tab="1"]')
+        # message_box.click()
+        # message_box.send_keys(send_remainder_text)
+        # message_box.send_keys(Keys.ENTER)
+
+        logging.info(f"==================== wa_message - Сообщение {send_remainder_text} для {phone_number} отправлено! ====================\n")
+
     except Exception as e:
         logging.error(f"Ошибка при отправке сообщения: {e}")
-        print(f"Ошибка при отправке сообщения: {e}")
-    
+        # print(f"Ошибка при отправке сообщения: {e}")
+
     # print(f"{phone_number_re}\n")
     # webbrowser.open(f"https://web.whatsapp.com/send?phone={phone_number}&text={send_remainder_text}")
     # time.sleep(15)
@@ -190,47 +229,40 @@ def wa_message(send_remainder_text: str, phone_number: str):
     # pyautogui.press("enter")
     # time.sleep(2)
     # pyautogui.hotkey("ctrl", "w")
-    logging.info(f"___Напоминание отправлено на WhatsApp, на номер {phone_number}\n")
-    return status.HTTP_200_OK 
+    logging.info(f"==================== wa_message - утилита отправки сообщения через WhatsApp работу закончила! ====================\n")
+    return True
 
-    
-def get_qr_code():
-    logging.info(f"==================== get_qr_code - утилита для парсинга qr-code! ====================\n")
-    qr_code_path = BASE_DIR/"static"/"qr_code"/"qr_code.png"
-    # Настройка опций для запуска браузера
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--remote-debugging-port=9222")
-    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-    
-    chrome_options.binary_location = "/usr/bin/chromium"
-    # Инициализация драйвера
-    driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options)
-    # Открытие WhatsApp Web
-    driver.get("https://web.whatsapp.com/")
-    time.sleep(10)
-    # Получение QR-кода как изображения
-    # qr_code_element = driver.find_element("xpath", '//img[@alt="Scan me!"]')
-    # qr_code_element = driver.find_element(By.XPATH, "//canvas[@aria-label='Scan me!']")
-    # try:
-    #     qr_code_element = WebDriverWait(driver, 30).until(
-    #         EC.presence_of_element_located((By.XPATH, "//canvas[@aria-label='Scan me!']"))
-    #     )
-    # except Exception as e:
-    #     print("QR-код не найден:", e)
-    # # qr_code_element.screenshot(qr_code_path)  # Сохранение QR-кода в файл
-    # qr_code_screenshot = qr_code_element.screenshot_as_png
-    # with open(qr_code_path, "wb") as f:
-    #     f.write(qr_code_screenshot)
-    driver.save_screenshot(qr_code_path)
-    
-    driver.quit()
-    logging.info(f"==================== get_qr_code - qr-code создан! ====================\n")
-    return qr_code_path
+
+def get_qr_code(request: Request):
+    logging.info(f"==================== get_qr_code - утилита делает скриншот страницы с qr-кодом! ====================\n")
+    if request.app.state.driver:
+        logging.info(f"==================== get_qr_code - сессия запущена, сканирование qr-кода не требуется! ====================\n")
+        return False
+    qr_code_path = BASE_DIR/"static"/"qr_code"
+
+    try:
+        driver = get_chrome_driver()
+        driver.get("https://web.whatsapp.com")
+
+        # # Ждем загрузки страницы (проверяем по наличию любого значимого элемента)
+        # WebDriverWait(driver, 30).until(
+        #     lambda d: d.execute_script("return document.readyState") == "complete"
+        # )
+
+        # Добавляем небольшую паузу для гарантированной отрисовки QR-кода
+        time.sleep(random.uniform(7, 12))
+
+        # Делаем скриншот всей страницы
+        driver.save_screenshot(qr_code_path/"qr_code.png")
+        logging.info(f"Скриншот сохранен в {qr_code_path}\n")
+        return True
+    except Exception as e:
+        logging.error(f"Ошибка при получении скриншота: {str(e)}")
+        return False
+    # finally:
+    #     if driver:
+    #         driver.quit()
+
 
 def email_message(send_remainder_text: str, email: EmailStr | list[EmailStr], ul: list, arenator: str):
     logging.info(f"==================== email_message - утилита по отправки письма! ====================\n")
@@ -241,7 +273,7 @@ def email_message(send_remainder_text: str, email: EmailStr | list[EmailStr], ul
     # print(f" ------------ {ul_list} ------------------\n")
     # try:
     #     le_name = Organizations(ul).name
-    #     le = None 
+    #     le = None
     #     for key in ul_list.keys():
     #         if key == le_name:
     #             le = ul_list[key]
@@ -263,7 +295,48 @@ def email_message(send_remainder_text: str, email: EmailStr | list[EmailStr], ul
         smtp.send_message(msg)
 
     logging.info(f"==================== email_message - письмо для {arenator} от {ul[0]} отправлено! ====================\n")
-    return 
+    return
+
+
+def get_chrome_driver(request: Request):
+    # Настройка опций для запуска браузера
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+
+    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
+    chrome_options.add_experimental_option("useAutomationExtension", False)
+
+    chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    chrome_options.add_argument("--lang=en-US,en;q=0.9")
+    chrome_options.add_argument("--force-device-scale-factor=1.0")
+    chrome_options.add_argument("--hide-scrollbars")
+    chrome_options.add_argument("--window-size=1200,800")
+    chrome_options.add_argument("--disable-webrtc")
+
+    chrome_options.add_argument("--disable-infobars")
+    chrome_options.add_argument("--disable-notifications")
+    chrome_options.add_argument("--disable-popup-blocking")
+
+    chrome_options.add_argument("--user-data-dir=/tmp/chrome-profile")
+    chrome_options.add_argument("--disable-extensions")
+
+    chrome_options.binary_location = "/usr/bin/chromium"
+
+    request.app.state.driver = webdriver.Chrome(options=chrome_options)
+    driver = request.app.state.driver
+
+    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+    "source": """
+    Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+    Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3]});
+    window.chrome = {runtime: {}};
+    """
+    })
+    return driver
 
 
 # async def template_processing(lessee, lease_contract_nomber, lease_contract_date):

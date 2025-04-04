@@ -8,8 +8,11 @@ import logging
 import hmac
 import hashlib
 import time
+import shutil
 # from email.message import EmailMessage
 # from src.utils import template_processing
+from datetime import datetime as dt, timedelta
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi import APIRouter, Depends, Request, UploadFile, status, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
@@ -19,8 +22,6 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from urllib.parse import unquote
 from .validators import load_validate
-import shutil
-import datetime as dt
 from src.parsing_excel.parsing_excel import parsing_excel 
 from src.utils import (
     cache,
@@ -50,6 +51,8 @@ from src.constants import (
 
 
 templates = Jinja2Templates(directory="src/templates")
+
+# app.mount("/static", StaticFiles(directory="static"), name="static")
 
 configure_logging()
 
@@ -237,12 +240,10 @@ async def mail(request: Request):
 async def send_reminder(request: Request, key: str):
 # async def send_reminder(request: Request, key: str,current_user: int = Depends(get_current_user)):
     logging.info(f"==================== send_reminder - Отправка уведомления! ====================\n")
-    qr_code_path = BASE_DIR/"static"/"qr_code"/"qr_code.png"
-    qr_code_path.mkdir(exist_ok=True)
     dictionary_list = await get_dictionary_list_from_cashe(cache_name="result_table")
     if not dictionary_list or dictionary_list is None:
         logging.info(f"==================== send_reminder - словарь с пользователями не найден или закончился срок хранения в кеше! ====================\n")
-        return templates.TemplateResponse("index.html", {"request": request})
+        return templates.TemplateResponse("upload_files.html", {"request": request})
     selected_dict: dict = None
     for i in dictionary_list:
         if key == next(iter(i)):
@@ -251,8 +252,8 @@ async def send_reminder(request: Request, key: str):
     logging.info(f"============== send_reminder ====== selected_dict: {selected_dict} ====================\n")
     logging.info(f"============== send_reminder ====== dictionary_list: {dictionary_list} ====================\n")
     if not selected_dict or selected_dict is None:
-        logging.info(f"==================== send_reminder - сообщение не отправлено, пользователь с словаре не найден! ====================\n")
-        return templates.TemplateResponse("index.html", {"request": request})
+        logging.info(f"==================== send_reminder - сообщение не отправлено, пользователь в словаре result_table не найден! ====================\n")
+        return RedirectResponse(url="/debtors", status_code=status.HTTP_303_SEE_OTHER)
     arenator = selected_dict[key][0]
     email = selected_dict[key][4]
     phone_number = selected_dict[key][5]
@@ -264,17 +265,36 @@ async def send_reminder(request: Request, key: str):
     wa_mes = "Сообщение не отправлено"
     email_mes = "Сообщение не отправлено"
     if validation_info["send_remainder_text"] is not None and validation_info["phone_number"] is not None:
-        qr_code_in_dir = os.listdir(qr_code_path)
-        if "qr_code.png" not in qr_code_in_dir:
-            logging.info(f"==================== send_reminder - Отправка уведомления! qr_code - не найден! редирект на получение qr-code! ====================\n")
-            # return templates.TemplateResponse("qr_code.html", {"request": request, "user_id": current_user})
+        # qr_code_path = BASE_DIR/"static"/"qr_code"
+        # qr_code_path.mkdir(exist_ok=True)
+        # qr_code_in_dir = os.listdir(qr_code_path)
+        # if "qr_code.png" in qr_code_in_dir:
+        #     logging.info(f"==================== send_reminder - qr_code найден! ====================\n")
+        #     file_time = dt.fromtimestamp(os.path.getmtime(qr_code_path/"qr_code.png"))
+        #     if file_time > dt.now() - timedelta(hours=12):
+        driver = request.app.state.whatsapp_driver
+        if not driver:
+            logging.info(f"==================== send_reminder - драйвер не найден, редирект для сканирования qr-кода! ====================\n")
             return RedirectResponse(url="/qr_code", status_code=status.HTTP_303_SEE_OTHER)
+                # logging.info(f"==================== send_reminder - qr_code найден! ====================\n")
         wa_message(
-            send_remainder_text = validation_info["send_remainder_text"],
-            phone_number = validation_info["phone_number"],
+        send_remainder_text = validation_info["send_remainder_text"],
+        phone_number = validation_info["phone_number"],
         )
-        wa_mes = "Сообщение отправлено"
-    logging.info(f"===== send_reminder - WA сообщение не отправлено, отсутствует send_remainder_text = {send_remainder_text} или phone_number = {phone_number}! =====\n")
+        if wa_message:
+            wa_mes = "Сообщение отправлено"
+        # else:
+        #     logging.info(f"==================== send_reminder - Отправка уведомления! qr_code - устарел! редирект на получение qr-code! ====================\n")
+        #     # return templates.TemplateResponse("qr_code.html", {"request": request, "user_id": current_user})
+        #     return RedirectResponse(url="/qr_code", status_code=status.HTTP_303_SEE_OTHER)
+        # else:
+        #     logging.info(f"==================== send_reminder - Отправка уведомления! qr_code - не найден! редирект на получение qr-code! ====================\n")
+        #     # return templates.TemplateResponse("qr_code.html", {"request": request, "user_id": current_user})
+        #     return RedirectResponse(url="/qr_code", status_code=status.HTTP_303_SEE_OTHER)
+
+    else:
+        logging.info(f"===== send_reminder - WA сообщение не отправлено, отсутствует или не валидные send_remainder_text = {send_remainder_text} или phone_number = {phone_number}! =====\n")
+        
     if validation_info["send_remainder_text"] is not None and validation_info["ul"] is not None and validation_info["email"] is not None:
         email_message(
             send_remainder_text = validation_info["send_remainder_text"],
@@ -284,7 +304,8 @@ async def send_reminder(request: Request, key: str):
         )
         logging.info(f"==================== send_reminder - Отправка уведомления для пользователя {arenator} выполнена! ====================\n")
         email_mes = "Сообщение отправлено"
-
+    else:
+        logging.info(f"===== send_reminder - email сообщение не отправлено, отсутствует или не валидные send_remainder_text = {send_remainder_text}, ul = {ul}, email = {email} ! =====\n")
     logging.info(f"-----Whatsapp: {wa_mes}, ------Email: {email_mes}\n")
     return f"Whatsapp: {wa_mes}, Email: {email_mes}"
 
@@ -293,14 +314,19 @@ async def send_reminder(request: Request, key: str):
 async def qr_code(request: Request):
 # async def qr_code(request: Request, current_user: int = Depends(get_current_user)):
     logging.info(f"==================== qr_code - Переход на страницу получения QR кода! ====================\n")
-    qr_code_path = get_qr_code()
-    if qr_code_path:
-        logging.info(f"==================== qr_code - QR код найден, переход на html страницу для вывода! ====================\n")
-        return templates.TemplateResponse("qr_code.html", {"request": request, "qr_code_path": qr_code_path})
+    qr_code_status = get_qr_code()
+    if qr_code_status:
+        logging.info(f"==================== qr_code - переход на страницу для сканирования qr кода! ====================\n")
+        # RedirectResponse("qr_code.html", status_code=status.HTTP_303_SEE_OTHER)
+        return templates.TemplateResponse("qr_code.html", {"request": request})
+    else:
+        logging.info(f"==================== qr_code - переход на страницу для сканирования qr кода не удался ! ====================\n")
+        return RedirectResponse(url="/debtors", status_code=status.HTTP_303_SEE_OTHER)
         
-    logging.info(f"==================== qr_code - QR код не найден, редирект на страницу с результатами! ====================\n")
+    logging.info(f"==================== qr_code - QR код не создан, редирект на страницу с результатами! ====================\n")
     # return templates.TemplateResponse("qr_code.html", {"request": request, "user_id": current_user, "qr_code_path": qr_code_path})
-    return RedirectResponse(url="/debtors", status_code=status.HTTP_303_SEE_OTHER)
+    # return RedirectResponse(url="/debtors", status_code=status.HTTP_303_SEE_OTHER)
+    # return templates.TemplateResponse("t_login.html", {"request": request})
 
 
 @router.post('/send_mail', response_class=HTMLResponse)
@@ -337,7 +363,21 @@ async def telegram_callback(request: Request):
     else:
         logging.info(f"==================== auth - авторизация прошла НЕ успешно! ====================\n")
         raise HTTPException(status_code=403, detail="Unauthorized access")
-    
+
+
+@router.post("/clear_qr_code", response_class=HTMLResponse)
+async def clear_qr_code(request: Request):
+    logging.info(f"==================== clear_qr_code - удаление qr-кода из директории хранения! ====================\n")
+    qr_code_dir = BASE_DIR/"static"/"qr_code"
+    qr_code_path = qr_code_dir/"qr_code.png"
+        
+    if os.path.exists(qr_code_path):
+        os.remove(qr_code_path)
+        logging.info(f"==================== clear_qr_code - директория с qr-кодом очищена! ====================\n")
+    else:
+        logging.info(f"==================== clear_qr_code - файл с qr-кодом в директории не найден! ====================\n")
+    return RedirectResponse(url="/debtors", status_code=status.HTTP_303_SEE_OTHER)
+
     
 # @router.post('/send_mail')
 # async def send_mail():
