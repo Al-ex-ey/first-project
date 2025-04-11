@@ -43,25 +43,28 @@
                 <script>
                     function sendReminder(key, button) {
                         button.disabled = true; // Делаем кнопку неактивной
-                        fetch(`/send_reminder/${key}`)
-                            .then(response => {
-                                if (response.ok) {
-                                    return response.text();
-                                } else {
-                                    throw new Error('Ошибка при отправке запроса');
-                                }
-                            })
+                            fetch(`/send_reminder/${key}`)
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error('Ошибка при отправке запроса');
+                                    }
+                                    return response.json();
+                                })
                             .then(data => {
-                                const message = button.nextElementSibling;
-                                message.innerText = data; // Обновить сообщение на странице
-                                setTimeout(() => {
-                                    message.innerText = ''; // Скрыть сообщение через 5 секунд
-                                    button.disabled = true; // Сделать кнопку постоянно неактивной
-                                }, 10000);
+                                if (data.redirect) {
+                                    window.location.href = data.redirect_url; // Перенаправляем на новую страницу
+                                } else {
+                                    const message = button.nextElementSibling;
+                                    message.innerText = data.message; // Обновить сообщение на странице
+                                    setTimeout(() => {
+                                        message.innerText = ''; // Скрыть сообщение через 5 секунд
+                                        button.disabled = true; // Сделать кнопку постоянно неактивной
+                                    }, 10000);
+                                }
                             })
                             .catch(error => {
                                 alert(error.message); // Показать сообщение об ошибке
-                                button.disabled = true; // Сделать кнопку постоянно неактивной в случае ошибки
+                                button.disabled = false; // Сделать кнопку постоянно неактивной в случае ошибки
                             });
                     }
                 </script>

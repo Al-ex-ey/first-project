@@ -1,5 +1,4 @@
 import datetime as dt
-
 import logging
 import hmac
 import hashlib
@@ -23,7 +22,8 @@ from cachetools import TTLCache
 from urllib.parse import quote
 
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -143,122 +143,142 @@ async def info_validation(**kwargs):
 
 
 
-def wa_message(request: Request, send_remainder_text: str, phone_number: str):
+def wa_message(request: Request, send_remainder_text: str, phone_number: str) -> bool:
     logging.info(f"==================== wa_message - старт утилиты отправки сообщения через WhatsApp! ====================\n")
-    send_remainder_text = quote(send_remainder_text)
-    # phone_pattern = re.compile(r'\+7\d{10}')
-    # if not re.search(phone_pattern, phone_number):
-    #     pattern = re.compile(r'\D')
-    #     c:str = re.sub(pattern, '', phone_number)
-    #     if len(c) < 10:
-    #         raise HTTPException(status_code=400, detail="Некорректный номер телефона")
-    #     nomber = c[-10:]
-    #     phone_number_re = f"+7{nomber}"
-    #     phone_number = phone_number_re
 
-
-    # driver = get_chrome_driver()
-    driver = request.app.state.whatsapp_driver
+    driver = request.app.state.driver
     if not driver:
-        logging.info(f"==================== wa_message - драйвер не найден, редирект для сканирования qr-кода! ====================\n")
+        logging.info(f"==================== wa_message - драйвер НЕ НАЙДЕН, редирект для сканирования qr-кода! ====================\n")
         return RedirectResponse(url="/qr_code", status_code=status.HTTP_303_SEE_OTHER)
 
+    logging.info(f"==================== wa_message - драйвер найден, отправка сообщения! ====================\n")
+    
     delay_sec: float = 2.0
         
     try:
         # 1. Открываем чат напрямую (надежнее поиска)
         driver.get(f"https://web.whatsapp.com/send?phone={phone_number}")
         
+        start_time = time.time()  # Запоминаем время начала ожидания
+        
+        time.sleep(random.uniform(4, 6))
+        
+        # 2. Ждём, пока загрузится интерфейс чата (не только поле ввода)
+        try:
+            logging.info("Ожидаем загрузку чата...")
+            # WebDriverWait(driver, 30).until(
+            #     EC.presence_of_element_located((By.XPATH, '//div[@aria-label="Чат"]'))
+            # )
+            WebDriverWait(driver, 20).until(
+                EC.visibility_of_element_located((By.XPATH, '//div[@role="textbox"][@contenteditable="true"]'))
+            )
+            logging.info("Чат успешно загружен")
+        except TimeoutException:
+            logging.error("Чат не загрузился за 20 секунд")
+            return False
+        
         # 2. Ожидание полной загрузки чата
-        WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.XPATH, '//div[@data-testid="conversation-panel-body"]'))
-        )
+        # WebDriverWait(driver, 60).until(
+        #     EC.presence_of_element_located((By.XPATH, '//div[@data-testid="conversation-panel-body"]'))
+        # )
+        
+        # qr_code_path = BASE_DIR/"static"/"qr_code"
+        
+        # # Ожидание полной загрузки чата
+        # wait_time = 0
+        # while wait_time < 15:  # Максимальное время ожидания 30 секунд
+        #     time.sleep(1)  # Ждем 1 секунду
+        #     wait_time += 1
+            
+        #     if wait_time == 5:
+        #         driver.save_screenshot(qr_code_path/"wait_chat_5.png")
+        #         logging.info("Скриншот сохранен: wait_chat_5.png")
+                
+        #     if wait_time == 10:
+        #         driver.save_screenshot(qr_code_path/"wait_chat_10.png")
+        #         logging.info("Скриншот сохранен: wait_chat_10.png")
+            
+        #     try:
+        #         WebDriverWait(driver, 1).until(
+        #             EC.visibility_of_element_located((By.XPATH, '//div[@data-testid="conversation-panel-body"]'))
+        #         )
+        #         break  # Если элемент найден, выходим из цикла
+        #     except:
+        #         continue  # Если элемент не найден, продолжаем ожидание
+        
+
         
         # 3. Поиск поля ввода (с явными проверками)
-        input_box = WebDriverWait(driver, 15).until(
-            EC.element_to_be_clickable((By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]'))
-        )
+        try:
+            logging.info("Ожидаем загрузку поле для ввода сообщения...")
+            input_box = WebDriverWait(driver, 60).until(
+                EC.element_to_be_clickable((By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]'))
+            )
+            logging.info("Поле успешно загружено")
+        except TimeoutException:
+            logging.error("Поле ввода не загрузилось за 60 секунд")
+            return False
+        
+        # input_box = WebDriverWait(driver, 30).until(
+        #     EC.element_to_be_clickable((By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]'))
+        # )
+        
+        elapsed_time = time.time() - start_time  # Вычисляем время ожидания
+        logging.info(f"Поле ввода стало доступным за {elapsed_time:.2f} секунд.")
         
         # 4. Эмуляция человеческого ввода
         time.sleep(delay_sec)
-        for chunk in [send_remainder_text[i:i+100] for i in range(0, len(send_remainder_text), 100)]:
+        for chunk in [send_remainder_text[i:i+50] for i in range(0, len(send_remainder_text), 50)]:
             input_box.send_keys(chunk)
-            time.sleep(0.2)
+            time.sleep(0.3)
         
         # 5. Отправка
         input_box.send_keys(Keys.ENTER)
         time.sleep(delay_sec)
         
-        # 6. Проверка отправки (опционально)
-        # WebDriverWait(driver, 10).until(
-        #     EC.presence_of_element_located((By.XPATH, '//span[@data-testid="msg-dblcheck"]'))
-        # )
-    
-    # except Exception as e:
-    #     print(f"Ошибка отправки: {str(e)}")
-    #     return False
-
-        # driver.get("https://web.whatsapp.com/")
-
-        # time.sleep(random.uniform(8, 12))
-
-        # # Поиск контакта
-        # search_box = driver.find_element("xpath", '//div[@contenteditable="true"][@data-tab="3"]')
-        # search_box.click()
-        # search_box.send_keys(phone_number)
-        # time.sleep(2)  # Ждем загрузку
-        # search_box.send_keys(Keys.ENTER)
-
-        # # Поиск поля ввода сообщения и отправка сообщения
-        # message_box = driver.find_element("xpath", '//div[@contenteditable="true"][@data-tab="1"]')
-        # message_box.click()
-        # message_box.send_keys(send_remainder_text)
-        # message_box.send_keys(Keys.ENTER)
+        # 6. Проверяем, что сообщение ушло (двойная галочка)
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, '//span[@data-icon="msg-dblcheck"]'))
+        )
 
         logging.info(f"==================== wa_message - Сообщение {send_remainder_text} для {phone_number} отправлено! ====================\n")
-
+        return True
+    
     except Exception as e:
         logging.error(f"Ошибка при отправке сообщения: {e}")
-        # print(f"Ошибка при отправке сообщения: {e}")
-
-    # print(f"{phone_number_re}\n")
-    # webbrowser.open(f"https://web.whatsapp.com/send?phone={phone_number}&text={send_remainder_text}")
-    # time.sleep(15)
-    # screen_width, screen_height = pyautogui.size()
-    # pyautogui.click(screen_width/2, screen_height/2)
-    # pyautogui.press("enter")
-    # time.sleep(2)
-    # pyautogui.hotkey("ctrl", "w")
-    logging.info(f"==================== wa_message - утилита отправки сообщения через WhatsApp работу закончила! ====================\n")
-    return True
-
-
-def get_qr_code(request: Request):
-    logging.info(f"==================== get_qr_code - утилита делает скриншот страницы с qr-кодом! ====================\n")
-    if request.app.state.driver:
-        logging.info(f"==================== get_qr_code - сессия запущена, сканирование qr-кода не требуется! ====================\n")
+        logging.info(f"==================== wa_message - Сообщение {send_remainder_text} для {phone_number} НЕ ОТПРАВЛЕНО !!! ====================\n")
         return False
-    qr_code_path = BASE_DIR/"static"/"qr_code"
 
-    try:
-        driver = get_chrome_driver()
-        driver.get("https://web.whatsapp.com")
+    finally:
+        logging.info(f"==================== wa_message - утилита отправки сообщения через WhatsApp работу закончила! ====================\n")
 
-        # # Ждем загрузки страницы (проверяем по наличию любого значимого элемента)
-        # WebDriverWait(driver, 30).until(
-        #     lambda d: d.execute_script("return document.readyState") == "complete"
-        # )
 
-        # Добавляем небольшую паузу для гарантированной отрисовки QR-кода
-        time.sleep(random.uniform(7, 12))
+# def get_qr_code(request: Request):
+#     logging.info(f"==================== get_qr_code - утилита делает скриншот страницы с qr-кодом! ====================\n")
+#     if request.app.state.driver:
+#         logging.info(f"==================== get_qr_code - сессия запущена, сканирование qr-кода не требуется! ====================\n")
+#         return False
+#     qr_code_path = BASE_DIR/"static"/"qr_code"
 
-        # Делаем скриншот всей страницы
-        driver.save_screenshot(qr_code_path/"qr_code.png")
-        logging.info(f"Скриншот сохранен в {qr_code_path}\n")
-        return True
-    except Exception as e:
-        logging.error(f"Ошибка при получении скриншота: {str(e)}")
-        return False
+#     try:
+#         driver = get_chrome_driver()
+#         driver.get("https://web.whatsapp.com")
+
+#         # # Ждем загрузки страницы (проверяем по наличию любого значимого элемента)
+#         # WebDriverWait(driver, 30).until(
+#         #     lambda d: d.execute_script("return document.readyState") == "complete"
+#         # )
+
+#         # Добавляем небольшую паузу для гарантированной отрисовки QR-кода
+#         time.sleep(random.uniform(7, 12))
+
+#         # Делаем скриншот всей страницы
+#         driver.save_screenshot(qr_code_path/"qr_code.png")
+#         logging.info(f"Скриншот сохранен в {qr_code_path}\n")
+#         return True
+#     except Exception as e:
+#         logging.error(f"Ошибка при получении скриншота: {str(e)}")
+#         return False
     # finally:
     #     if driver:
     #         driver.quit()
@@ -283,20 +303,26 @@ def email_message(send_remainder_text: str, email: EmailStr | list[EmailStr], ul
     #     logging.error(f"______Организация в списке не найдена")
     #     raise
 
-    msg = EmailMessage()
-    msg['Subject'] = f"Внимание! Напоминаю о задолженности по арендным платежам! {ul[0]} - {arenator}"
-    msg['From'] = ul[5]
-    msg['To'] = email
-    msg['Cc'] = ul[5]
-    msg.set_content(send_remainder_text)
+    try:
+        msg = EmailMessage()
+        msg['Subject'] = f"Внимание! Напоминаю о задолженности по арендным платежам! {ul[0]} - {arenator}"
+        msg['From'] = ul[5]
+        msg['To'] = email
+        msg['Cc'] = ul[5]
+        msg.set_content(send_remainder_text)
 
-    with smtplib.SMTP_SSL('smtp.mail.ru', MAIL_PORT) as smtp:
-        smtp.login(ul[5], MAIL_PASSWORD)
-        smtp.send_message(msg)
+        with smtplib.SMTP_SSL('smtp.mail.ru', MAIL_PORT) as smtp:
+            smtp.login(ul[5], MAIL_PASSWORD)
+            smtp.send_message(msg)
 
-    logging.info(f"==================== email_message - письмо для {arenator} от {ul[0]} отправлено! ====================\n")
-    return
-
+        logging.info(f"==================== email_message - письмо для {arenator} от {ul[0]} отправлено! ====================\n")
+        return True
+    except Exception as e:
+        logging.error(f"Ошибка при отправке email-сообщения: {e}")
+        logging.info(f"==================== email_message - письмо для {arenator} от {ul[0]} НЕ ОТПРАВЛЕНО !!! ====================\n")
+        return False
+    finally:
+            logging.info(f"==================== email_message - утилита отправки email-сообщения работу закончила! ====================\n")
 
 def get_chrome_driver(request: Request):
     # Настройка опций для запуска браузера
@@ -307,14 +333,15 @@ def get_chrome_driver(request: Request):
     chrome_options.add_argument("--disable-gpu")
 
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option("useAutomationExtension", False)
 
     chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-    chrome_options.add_argument("--lang=en-US,en;q=0.9")
+    chrome_options.add_argument("--lang=ru-RU,ru;q=0.9")
+    
     chrome_options.add_argument("--force-device-scale-factor=1.0")
     chrome_options.add_argument("--hide-scrollbars")
-    chrome_options.add_argument("--window-size=1200,800")
+    chrome_options.add_argument("--window-size=1440,900")
     chrome_options.add_argument("--disable-webrtc")
 
     chrome_options.add_argument("--disable-infobars")
@@ -323,19 +350,38 @@ def get_chrome_driver(request: Request):
 
     chrome_options.add_argument("--user-data-dir=/tmp/chrome-profile")
     chrome_options.add_argument("--disable-extensions")
+    
+    # chrome_options.add_argument("--allow-running-insecure-content")
+    # chrome_options.add_argument("--ignore-certificate-errors")
 
     chrome_options.binary_location = "/usr/bin/chromium"
 
-    request.app.state.driver = webdriver.Chrome(options=chrome_options)
-    driver = request.app.state.driver
+    try:
+        request.app.state.driver = webdriver.Chrome(options=chrome_options)
+        # driver = webdriver.Chrome(
+        #     options=chrome_options,
+        #     service=ChromeService(
+        #         ChromeDriverManager().install()
+        #     )
+        # )
+        driver = request.app.state.driver
 
-    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
-    "source": """
-    Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-    Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3]});
-    window.chrome = {runtime: {}};
-    """
-    })
+        driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+            "source": """
+            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+            Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+            Object.defineProperty(navigator, 'languages', {get: () => ['ru-RU', 'ru']});
+            window.chrome = {app: {isInstalled: false}, runtime: {}};
+            """
+        })
+        
+            # Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3]});
+            # window.chrome = {runtime: {}};
+        
+    except Exception as e:
+        logging.error(f"Ошибка при запуске Chrome: {e}")
+        raise
+    
     return driver
 
 

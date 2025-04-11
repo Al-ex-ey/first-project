@@ -1,35 +1,37 @@
-<!DOCTYPE html>
-<html lang="ru">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project-mh</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
+{% block content %}
+<div class="container mt-5"></div>
+    <h3 class="center-align">Отсканируйте этот QR-код в приложении WhatsApp на вашем телефоне.</h3>
 
-<body>
-    <div class="container mt-5">
+    <form id="screen_qr" action="/debtors/" method="get">
+        <div class="card-action">
+            <button class="btn btn-outline-primary" type="submit" id="submitButton">Я отсканировал QR-код</button>
+        </div>
+    </form>
 
-        <h3>Отсканируйте этот QR-код в приложении WhatsApp на вашем телефоне.</h2>
-        <img src="{{ url_for('static', path='qr_code/qr_code.png') }}" alt="WhatsApp QR Code">
-        <!-- <a href="/send-message"><button>Я отсканировал QR-код</button></a> -->
-
-        <ul class="nav nav-pills">
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('debtors') }}">Я отсканировал QR-код</a>
-            </li>
-        </ul>
-
-        <form method="post" action="/clear_qr_code">
-            <div class="card-action">
-                <button class="btn btn-outline-primary" type="submit" id="submitButton">Удалить QR QR-код</button>
-            </div>
-        </form>
-
-        {% include "footer.html" %}
+    <div class="qr-code-container">
+        <img src="{{ url_for('static', path='qr_code/qr_code.png') }}" alt="WhatsApp QR Code" class="qr-code">
     </div>
-</body>
+</div>
 
-</html>
+<style>
+    .qr-code-container {
+        position: relative;
+        width: 100%;
+        height: calc(100vh - 150px); /* Высота окна минус высота заголовка и кнопки */
+        overflow: hidden; /* Скрыть переполнение */
+    }
 
+    .qr-code {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: auto;
+        height: 100%; /* Занять всю высоту контейнера */
+        max-width: none; /* Убрать ограничение по ширине */
+        transform: translate(-50%, -50%); /* Центрирование изображения */
+    }
+</style>
+
+{% endblock %}
