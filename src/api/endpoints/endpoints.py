@@ -285,7 +285,7 @@ async def send_reminder(request: Request, key: str):
         )
         
         if wa_result:
-            logging.info(f"===== send_reminder - return с функции wa_message = {wa_message} =====\n")
+            logging.info(f"===== send_reminder - return с функции wa_message = {wa_result} =====\n")
             wa_mes = "Сообщение отправлено"
         else:
             wa_mes = "Сообщение НЕ отправлено"
@@ -301,16 +301,16 @@ async def send_reminder(request: Request, key: str):
             arenator = arenator,
         )
         if email_result:
-            logging.info(f"===== send_reminder - return с функции email_message = {email_message} =====\n")
+            logging.info(f"===== send_reminder - return с функции email_message = {email_result} =====\n")
             logging.info(f"==================== send_reminder - Отправка уведомления для пользователя {arenator} выполнена! ====================\n")
-            wa_mes = "Сообщение отправлено"
+            email_mes = "Сообщение отправлено"
         else:
-            wa_mes = "Сообщение НЕ отправлено"
+            email_mes = "Сообщение НЕ отправлено"
         
         # email_mes = "Сообщение отправлено"
     else:
         logging.info(f"===== send_reminder - email сообщение не отправлено, отсутствует или не валидные send_remainder_text = {send_remainder_text}, ul = {ul}, email = {email} ! =====\n")
-        email_mes = "Сообщение отправлено"
+        email_mes = "Сообщение НЕ отправлено"
         
     logging.info(f"-----Whatsapp: {wa_mes}, ------Email: {email_mes}\n")
     # return f"Whatsapp: {wa_mes}, Email: {email_mes}"

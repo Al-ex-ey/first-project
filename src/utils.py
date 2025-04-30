@@ -211,12 +211,12 @@ def wa_message(request: Request, send_remainder_text: str, phone_number: str) ->
         # 3. Поиск поля ввода (с явными проверками)
         try:
             logging.info("Ожидаем загрузку поле для ввода сообщения...")
-            input_box = WebDriverWait(driver, 60).until(
+            input_box = WebDriverWait(driver, 20).until(
                 EC.element_to_be_clickable((By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]'))
             )
             logging.info("Поле успешно загружено")
         except TimeoutException:
-            logging.error("Поле ввода не загрузилось за 60 секунд")
+            logging.error("Поле ввода не загрузилось за 20 секунд")
             return False
         
         # input_box = WebDriverWait(driver, 30).until(
@@ -224,7 +224,7 @@ def wa_message(request: Request, send_remainder_text: str, phone_number: str) ->
         # )
         
         elapsed_time = time.time() - start_time  # Вычисляем время ожидания
-        logging.info(f"Поле ввода стало доступным за {elapsed_time:.2f} секунд.")
+        logging.info(f"Поле ввода стало доступным за {elapsed_time:.2f} секунд(ы).")
         
         # 4. Эмуляция человеческого ввода
         time.sleep(delay_sec)
@@ -314,7 +314,7 @@ def email_message(send_remainder_text: str, email: EmailStr | list[EmailStr], ul
         with smtplib.SMTP_SSL('smtp.mail.ru', MAIL_PORT) as smtp:
             smtp.login(ul[5], MAIL_PASSWORD)
             smtp.send_message(msg)
-
+        logging.info(f"===== email_message - email: {email}, ul[5]: {ul[5]}, ul[0]: {ul[0]}, arenator: {arenator} =====\n")
         logging.info(f"==================== email_message - письмо для {arenator} от {ul[0]} отправлено! ====================\n")
         return True
     except Exception as e:
