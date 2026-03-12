@@ -1,7 +1,10 @@
+import datetime as dt
 import os
+import json
+
 from pathlib import Path
 from dotenv import load_dotenv
-import datetime as dt
+
 
 load_dotenv()
 
@@ -16,7 +19,7 @@ DATE_NOW = '%d.%m.%Y'
 """ Переменные parsing_excel"""
 AMOUNT_ROW: int = 0  # кол-во обработанных строк в файле с арендаторами - не пустые и не заголовки
 AMOUNT_A: int = 0  # кол-во обработанных арендаторов в файле с арендаторами
-AMOUNT_ROW_TOTAL: int = 0  # кол-во строк в файле с арендаторами
+AMOUNT_ROW_TOTAL: int = 500  # кол-во строк в файле с арендаторами
 AMOUNT_A_TOTAL: int = 0  # кол-во строк с арендаторами
 ARENDA_AMOUNT_ROW: int = 333  # примерное кол-во строк в файле Arenda 
 DEBIT_AMOUNT_ROW: int = 2900  # примерное кол-во строк в файле debet
@@ -29,6 +32,13 @@ MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
 MAIL_PORT = os.getenv("MAIL_PORT")
 MAIL_TO = os.getenv("MAIL_TO")
 MAIL_CC = os.getenv("MAIL_CC")
+
+
+""" Переменные auth"""
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+# ALLOWED_USER_IDS = json.loads(os.getenv("USER_IDS", "[]"))
+# USER_ID = set(ALLOWED_USER_IDS)
+# ALLOWED_USER_IDS = list(map(int, os.getenv("USER_IDS").split(',')))
 
 # TEXT_REPLACEMENTS = {
 #     "lessor_name": "АО «Проспект недвижимость»",
