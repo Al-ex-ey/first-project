@@ -50,11 +50,16 @@ services:
 
   project-mh:
     image: alexeysubudaev/project-mh
+    build: 
+      context: ../backend
+      dockerfile: Dockerfile
     container_name: project-mh
     restart: always
     depends_on:
       - init-dhparams
       - certbot-oneshot
+    ports:
+      - 8000:8000
     networks:
       - my_network
     env_file:

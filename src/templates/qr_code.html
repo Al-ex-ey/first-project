@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5"></div>
+    <h3 class="center-align">Отсканируйте этот QR-код в приложении WhatsApp на вашем телефоне.</h3>
+
+    <form id="screen_qr" action="/debtors/" method="get">
+        <div class="card-action">
+            <button class="btn btn-outline-primary" type="submit" id="submitButton">Я отсканировал QR-код</button>
+        </div>
+    </form>
+
+    <div class="qr-code-container">
+        <img src="{{ url_for('static', path='qr_code/qr_code.png') }}" alt="WhatsApp QR Code" class="qr-code">
+    </div>
+</div>
+
+<style>
+    .qr-code-container {
+        position: relative;
+        width: 100%;
+        height: calc(100vh - 150px); /* Высота окна минус высота заголовка и кнопки */
+        overflow: hidden; /* Скрыть переполнение */
+    }
+
+    .qr-code {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: auto;
+        height: 100%; /* Занять всю высоту контейнера */
+        max-width: none; /* Убрать ограничение по ширине */
+        transform: translate(-50%, -50%); /* Центрирование изображения */
+    }
+</style>
+
+{% endblock %}

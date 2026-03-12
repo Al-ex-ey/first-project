@@ -6,7 +6,8 @@
 <h5> Арендаторы без договоров: {{ query_params.arendator_without_contract }}</h5>
 <h5> Не обработанные арендаторы: {{ query_params.not_processed }}</h5>
 <h5> Общая сумма задолженности у арендаторов: <span style="color: red;">{{ query_params.total_debet }}</span></h5>
-<h5> Общая сумма переплаты/обеспесительного плтежа у арендаторов: <span style="color: green;">{{ query_params.total_credit }}</span></h5    >
+<h5> Общая сумма переплаты/обеспесительного плтежа у арендаторов: <span style="color: green;">{{ query_params.total_credit }}</span></h5>
+<h4> Установить флаг для тех контрагентов которым нужно отправить уведомление/напоминание о действующей задолженности -> вывести список отмеченных -> сформировать уведомление -> отправить уведомление контрагентам из списка в фоне </h4>
 
 <h6>result_table: </h6>
 <ul>
@@ -43,25 +44,28 @@
                 <script>
                     function sendReminder(key, button) {
                         button.disabled = true; // Делаем кнопку неактивной
-                        fetch(`/send_reminder/${key}`)
-                            .then(response => {
-                                if (response.ok) {
-                                    return response.text();
+                            fetch(`/send_reminder/${key}`)
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error('Ошибка при отправке запроса');
+                                    }
+                                    return response.json();
+                                })
+                            .then(data => {         
+                                if (data.redirect) {
+                                    window.location.href = data.redirect_url; // Перенаправляем на новую страницу
                                 } else {
-                                    throw new Error('Ошибка при отправке запроса');
+                                    const message = button.nextElementSibling;
+                                    message.innerText = data.message; // Обновить сообщение на странице
+                                    setTimeout(() => {
+                                        message.innerText = ''; // Скрыть сообщение через 5 секунд
+                                        button.disabled = true; // Сделать кнопку постоянно неактивной
+                                    }, 10000);
                                 }
-                            })
-                            .then(data => {
-                                const message = button.nextElementSibling;
-                                message.innerText = data; // Обновить сообщение на странице
-                                setTimeout(() => {
-                                    message.innerText = ''; // Скрыть сообщение через 5 секунд
-                                    button.disabled = true; // Сделать кнопку постоянно неактивной
-                                }, 10000);
                             })
                             .catch(error => {
                                 alert(error.message); // Показать сообщение об ошибке
-                                button.disabled = true; // Сделать кнопку постоянно неактивной в случае ошибки
+                                button.disabled = false; // Сделать кнопку постоянно неактивной в случае ошибки
                             });
                     }
                 </script>

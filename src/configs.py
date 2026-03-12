@@ -1,14 +1,14 @@
 import logging
 from src.constants import BASE_DIR, LOG_FORMAT, DT_FORMAT
 from pydantic_settings import BaseSettings
-
+from typing import List
 
 class Settings(BaseSettings):
-    app_title: str = 'Project MH'
+    app_title: str = 'Project mh'
     # database_url: str
     # POSTGRES_DB: str
     # POSTGRES_USER: str
-    # POSTGRES_PASSWORD: str``
+    # POSTGRES_PASSWORD: str
     # PGADMIN_DEFAULT_EMAIL: str
     # PGADMIN_DEFAULT_PASSWORD: str
     # PGADMIN_CONFIG_SERVER_MODE: str
@@ -16,18 +16,27 @@ class Settings(BaseSettings):
     # PGADMIN_LISTEN_PORT: int
     # PATH_TO_SETTINGS: str
     # PHONE_NAMBER: str
-    # MAIL_PORT: int
-    # MAIL_PASSWORD: str
+    mail_port: int
+    mail_password: str
+    user_ids: List[int]
+    bot_token: str
+    file_name: str
+    
+    @property
+    def allowed_user_ids(self) -> List[int]:
+        return [int(user_id) for user_id in self.user_ids]
+    
     class Config:
         env_file = '.env'
+        env_prefix = ""
 
 settings = Settings()
 
 
 def configure_logging():
-    log_dir = BASE_DIR / 'logs'
+    log_dir = BASE_DIR/'logs'
     log_dir.mkdir(exist_ok=True)
-    log_file = log_dir / 'parsing_excel_log.log'
+    log_file = log_dir/'parsing_excel_log.log'
     
     logging.basicConfig(
         datefmt=DT_FORMAT,
