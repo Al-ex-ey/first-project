@@ -51,7 +51,7 @@ services:
   project-mh:
     image: alexeysubudaev/project-mh
     build: 
-      context: ../backend
+      # context: ../backend
       dockerfile: Dockerfile
     container_name: project-mh
     restart: always
