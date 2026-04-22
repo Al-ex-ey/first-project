@@ -45,11 +45,46 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     """ Загрузка файлов для обработкии и проверка на соответствие"""
     # try:
     debet_pattern = re.compile(r"debet\_\d\d\.\d\d\.\d\d\d\d\_\d\d\-\d\d\.xlsx$")
+    arenda_pattern = re.compile(r"Arenda_\d\d\d\d\.xlsx$")
     rdd_pattern = re.compile(r"rdd\_\d\d\.\d\d\d\d\.xlsx$")
     downloads_dir = BASE_DIR/"downloads"
     files_dir = os.listdir(downloads_dir)
     debet_list = []
     rdd_list = []
+
+
+    # for file in files_dir:
+    #     if  re.search(debet_pattern, file): 
+    #         debet_list.append(file)
+    #     if  re.search(rdd_pattern, file):
+    #         rdd_list.append(file)
+
+    
+    # print(f"debet_list - {debet_list}\n")
+    # print(f"rdd_list - {rdd_list}\n")
+    # print(f"arenda_list - {arenda_list}\n")
+
+    # if len(debet_list) > 0:
+    #     debet_dir = [os.path.join(downloads_dir, file) for file in debet_list]
+    #     debet_dir = [file for file in debet_dir if os.path.isfile(file)]
+    #     debet_dir = max(debet_dir, key=os.path.getctime)
+    #     debet_file_name = debet_dir.split('\\')[-1]
+    #     print(f"debet_dir - {debet_dir}\n")
+
+    # if len(rdd_list) > 0:
+    #     rdd_dir = [os.path.join(downloads_dir, file) for file in rdd_list]
+    #     rdd_dir = [file for file in rdd_dir if os.path.isfile(file)]
+    #     rdd_dir = max(rdd_dir, key=os.path.getctime)
+    #     rdd_file_name = rdd_dir.split('\\')[-1]
+    #     print(f"rdd_dir - {rdd_dir}\n")
+
+    # if len(arenda_list) > 0:
+    #     arenda_dir = [os.path.join(downloads_dir, file) for file in arenda_list]
+    #     arenda_dir = [file for file in arenda_dir if os.path.isfile(file)]
+    #     arenda_dir = max(arenda_dir, key=os.path.getctime)
+    #     arenda_file_name = arenda_dir.split('\\')[-1]
+    #     print(f"arenda_dir - {arenda_dir}\n")
+
     for file in files_dir:
         if  re.search(debet_pattern, file):
             debet_list.append(file)
@@ -60,7 +95,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     if len(debet_list) > 0:
         debet_files = [os.path.join(downloads_dir, file) for file in debet_list]
         debet_files = [file for file in debet_files if os.path.isfile(file)]
-        debet_file_path = max(debet_files, key=os.path.getctime)
+        debet_file_path = max(debet_files, key=os.path.getmtime)
         debet_file_name = debet_file_path.split('\\')[-1]
         check_debet_pattern = re.search(debet_pattern, debet_file_name)
         if check_debet_pattern:
@@ -78,7 +113,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     if len(rdd_list) > 0:
         rdd_files = [os.path.join(downloads_dir, file) for file in rdd_list]
         rdd_files = [file for file in rdd_files if os.path.isfile(file)]
-        rdd_file_path = max(rdd_files, key=os.path.getctime)
+        rdd_file_path = max(rdd_files, key=os.path.getmtime)
         rdd_file_name = rdd_file_path.split('\\')[-1]
         check_rdd_pattern = re.search(rdd_pattern, rdd_file_name)
         if check_rdd_pattern:
@@ -104,14 +139,27 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
 
     """ Получение рабочих страниц из файлов """
     try:
+        print(f"debet_dir - {debet_dir}\n")
+        print(f"rdd_dir - {rdd_dir}\n")
+        print(f"arenda_dir - {arenda_dir}\n")
         book_arenda = openpyxl.load_workbook(filename=arenda_dir)
+        print(f"book_arenda - {book_arenda}\n")
         book_debet = openpyxl.load_workbook(filename=debet_dir)
+        print(f"book_debet - {book_debet}\n")
         book_rdd = openpyxl.load_workbook(filename=rdd_dir)
+        print(f"book_rdd - {book_rdd}\n")
+
         logging.info(f"==================== parsing_excel - книги созданы успешно! ====================")
+        
         sheet_arenda = book_arenda.worksheets[-1]
+        print(f"sheet_arenda - {sheet_arenda}\n")
         sheet_debet = book_debet.worksheets[0]
+        print(f"sheet_debet - {sheet_debet}\n")
         sheet_rdd = book_rdd.worksheets[0]
+        print(f"sheet_rdd - {sheet_rdd}\n")
+
         logging.info(f"==================== parsing_excel - рабочие страницы созданы успешно! ====================")
+
     except (OSError, IOError):
         logging.error(f"Ошибка доступа к файлу или отсутствует сетевое соединение!\n")
         raise HTTPException(
