@@ -11,7 +11,7 @@ from fastapi.responses import RedirectResponse
 # from openpyxl.styles import PatternFill
 # from openpyxl.styles.differential import DifferentialStyle
 # from openpyxl.formatting.rule import Rule
-from openpyxl.styles import NamedStyle, Alignment, Font, Border, Side, PatternFill
+from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
 from src.configs import configure_logging, settings
 from src.constants import (
     AMOUNT_ROW,
@@ -92,7 +92,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
             rdd_list.append(file)
         logging.info(f"==================== parsing_excel - формирование списка файлов дебеторки и цены на арнеду в дерикторнии прошло успешно! ====================")
 
-    if len(debet_list) > 0:
+    if len(debet_list) > 0: 
         debet_files = [os.path.join(downloads_dir, file) for file in debet_list]
         debet_files = [file for file in debet_files if os.path.isfile(file)]
         debet_file_path = max(debet_files, key=os.path.getmtime)
@@ -139,24 +139,21 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
 
     """ Получение рабочих страниц из файлов """
     try:
-        print(f"debet_dir - {debet_dir}\n")
-        print(f"rdd_dir - {rdd_dir}\n")
-        print(f"arenda_dir - {arenda_dir}\n")
+
         book_arenda = openpyxl.load_workbook(filename=arenda_dir)
-        print(f"book_arenda - {book_arenda}\n")
+
         book_debet = openpyxl.load_workbook(filename=debet_dir)
-        print(f"book_debet - {book_debet}\n")
+
         book_rdd = openpyxl.load_workbook(filename=rdd_dir)
-        print(f"book_rdd - {book_rdd}\n")
 
         logging.info(f"==================== parsing_excel - книги созданы успешно! ====================")
         
         sheet_arenda = book_arenda.worksheets[-1]
-        print(f"sheet_arenda - {sheet_arenda}\n")
+
         sheet_debet = book_debet.worksheets[0]
-        print(f"sheet_debet - {sheet_debet}\n")
+
         sheet_rdd = book_rdd.worksheets[0]
-        print(f"sheet_rdd - {sheet_rdd}\n")
+
 
         logging.info(f"==================== parsing_excel - рабочие страницы созданы успешно! ====================")
 
@@ -238,7 +235,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
 
     contragents: list = []
 
-    for i in range(1, 1500):
+    for i in range(1, 2000):
         a: dict = {}
         arendator_cell = sheet_rdd.cell(row=i, column=1)
         arendator_price_cell = arendator_cell.offset(column=1)
@@ -259,6 +256,7 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
     #         break
 
     """ Цикл сравнения книги арендаторов с книгой дебеторки"""
+    logging.info(f"==================== parsing_excel - Запуск Цикла сравнения книги арендаторов с книгой дебеторки ====================")
     for i in range(1, AMOUNT_ROW_TOTAL):
         arendator_cell = sheet_arenda.cell(row=i, column=1)
         arendator = arendator_cell.value
@@ -277,68 +275,183 @@ def parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA
         new_sheet.cell(i, column=6).fill = PatternFill(fill_type='solid', start_color='FFFFC0')
         
         """ Выбор по арендатрам """
-        for d in sheet_debet.iter_rows(min_row=10, max_row=DEBIT_AMOUNT_ROW, min_col=1, max_col=3):
+        logging.info(f"==================== parsing_excel - Запуск Цикла сравнения книги арендаторов с книгой дебеторки - Выбор по арендатрам ====================")
+        for d in sheet_debet.iter_rows(min_row=1, max_row=DEBIT_AMOUNT_ROW, min_col=1, max_col=3):
             debet_arendator_cell = d[0]
             arendator_d = debet_arendator_cell.value
-            if arendator_d == None or debet_arendator_cell.alignment.indent > 0:
+            if debet_arendator_cell.value == None or debet_arendator_cell.alignment.indent > 0:
                 continue
+
+            logging.info(f"==================== parsing_excel - debet_arendator_cell.value {debet_arendator_cell.value} ====================")
 
             pattern = re.compile(r'[\"|\(|\)]')
             comparison = re.search(re.sub(pattern, '', arendator.lower()), re.sub(pattern, '', arendator_d.lower()))
+            logging.info(f"==================== parsing_excel - comparison {comparison} ====================")
 
             cell_arenda_contract = sheet_arenda.cell(row=i, column=2)
             if cell_arenda_contract.value == None:
                 if arendator not in lost_contracts:
                     lost_contracts.append(arendator)
                 continue
-                        
-            """ Выбор по договорам"""
-            for r in range(1, 20):
-                cell_debet_contract = debet_arendator_cell.offset(row=r)
-                if comparison and (cell_arenda_contract.value == cell_debet_contract.value):
-                    debet_cell = cell_debet_contract.offset(column=1)
-                    credit_cell = cell_debet_contract.offset(column=2)
+
+            logging.info(f"==================== parsing_excel - cell_arenda_contract.value {cell_arenda_contract.value} ====================")
+
+            try:            
+                """ Выбор по договорам"""
+                logging.info(f"==================== parsing_excel - Запуск Цикла сравнения книги арендаторов с книгой дебеторки - Выбор по договорам ====================")
+                for r in range(1, 20):
+                    cell_debet_contract = debet_arendator_cell.offset(row=r)
                     
-                    arendator_price = next((d[arendator] for d in contragents if arendator in d), None)
-                    if arendator_price == None:
-                        arendator_price = 0
-                                        
-                    logging.info(f" {arendator} ----- {cell_arenda_contract.value} ----- {debet_cell.value} ----- {credit_cell.value}\n")
-                    note_style = "Neutral"
-                    if debet_cell.value:
-                        style_bad = "Bad"
-                        note_style = "Bad"
-                    else:
-                        style_bad = "Normal"
+                    logging.info(f"==================== parsing_excel - cell_arenda_contract.value = {cell_arenda_contract.value} ====================")
+                    logging.info(f"==================== parsing_excel - cell_debet_contract.value = {cell_debet_contract.value} ====================")
+                    if cell_debet_contract == None or cell_debet_contract.alignment.indent <= 0:
+                        continue
+
+                    # if comparison and (cell_arenda_contract.value == cell_debet_contract.value):
+                    if cell_arenda_contract.value == cell_debet_contract.value:
+                        debet_cell = cell_debet_contract.offset(column=1)
+                        credit_cell = cell_debet_contract.offset(column=2)
+                        
+                        arendator_price = next((d[arendator] for d in contragents if arendator in d), None)
+                        if arendator_price == None:
+                            arendator_price = 0
                         if debet_cell.value == None:
                             debet_cell.value = 0
-
-                    if credit_cell.value:
-                        style_good = "Good"
-                        if credit_cell.value >= arendator_price:
-                            note_style = "Good"
-                    else:
-                        style_good = "Normal"
                         if credit_cell.value == None:
                             credit_cell.value = 0
-                    
-                    bd = Side(style='thin', color="00000000")
-                    new_sheet.cell(i, column=3, value=debet_cell.value).style = style_bad
-                    new_sheet.cell(i, column=3).alignment = Alignment(horizontal="center", vertical="center")
-                    new_sheet.cell(i, column=3).border = Border(left=bd, top=bd, right=bd, bottom=bd)
-                    new_sheet.cell(i, column=4, value=credit_cell.value).style = style_good
-                    new_sheet.cell(i, column=4).alignment = Alignment(horizontal="center", vertical="center")
-                    new_sheet.cell(i, column=4).border = Border(left=bd, top=bd, right=bd, bottom=bd)
-                    new_sheet.cell(i, column=5, value=arendator_price).style = "Normal"
-                    new_sheet.cell(i, column=5).alignment = Alignment(horizontal="center", vertical="center")
-                    new_sheet.cell(i, column=5).border = Border(left=bd, top=bd, right=bd, bottom=bd)
-                    new_sheet.cell(i, column=6).style = note_style
-                    new_sheet.cell(i, column=6).alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-                    new_sheet.cell(i, column=6).border = Border(left=bd, top=bd, right=bd, bottom=bd)
-                    AMOUNT_A = AMOUNT_A + 1
-                    break
 
+                        logging.info(f"==================== parsing_excel - debet_cell.value = {debet_cell.value} ====================")
+                        logging.info(f"==================== parsing_excel - credit_cell.value = {credit_cell.value} ====================")
+                        logging.info(f"==================== parsing_excel - arendator_price = {arendator_price} ====================")
+                                            
+                        logging.info(f" {arendator} ----- {cell_arenda_contract.value} ----- {debet_cell.value} ----- {credit_cell.value}\n")
+
+                        if debet_cell.value > 0:
+                            bd = Side(style='thin', color="00000000")
+
+                            new_sheet.cell(i, column=3, value=debet_cell.value).number_format = '#,##0.00'
+                            new_sheet.cell(i, column=3).font = Font(name='Arial', size=12, color="00000000", bold=True)
+                            new_sheet.cell(i, column=3).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                            new_sheet.cell(i, column=3).alignment = Alignment(horizontal="center", vertical="center")
+                            new_sheet.cell(i, column=3).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type='solid')
+
+                            new_sheet.cell(i, column=4, value=credit_cell.value).number_format = '#,##0.00'
+                            new_sheet.cell(i, column=4).font = Font(name='Arial', size=12, color="00000000")
+                            new_sheet.cell(i, column=4).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                            new_sheet.cell(i, column=4).alignment = Alignment(horizontal="center", vertical="center")
+                            new_sheet.cell(i, column=4).fill = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
+
+                            new_sheet.cell(i, column=5, value=arendator_price).number_format = '#,##0.00'
+                            new_sheet.cell(i, column=5).font = Font(name='Arial', size=12, color="00000000")
+                            new_sheet.cell(i, column=5).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                            new_sheet.cell(i, column=5).alignment = Alignment(horizontal="center", vertical="center")
+                            new_sheet.cell(i, column=5).fill = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
+
+                            new_sheet.cell(i, column=6).font = Font(name='Arial', size=12, color="00000000")
+                            new_sheet.cell(i, column=6).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                            new_sheet.cell(i, column=6).alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                            new_sheet.cell(i, column=6).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type='solid')
+
+                            AMOUNT_A = AMOUNT_A + 1
+                            break
+
+                        if credit_cell.value >= arendator_price:
+                            bd = Side(style='thin', color="00000000")
+
+                            new_sheet.cell(i, column=3, value=debet_cell.value).number_format = '#,##0.00'
+                            new_sheet.cell(i, column=3).font = Font(name='Arial', size=12, color="00000000", bold=True)
+                            new_sheet.cell(i, column=3).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                            new_sheet.cell(i, column=3).alignment = Alignment(horizontal="center", vertical="center")
+                            new_sheet.cell(i, column=3).fill = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
+
+                            new_sheet.cell(i, column=4, value=credit_cell.value).number_format = '#,##0.00'
+                            new_sheet.cell(i, column=4).font = Font(name='Arial', size=12, color="00000000")
+                            new_sheet.cell(i, column=4).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                            new_sheet.cell(i, column=4).alignment = Alignment(horizontal="center", vertical="center")
+                            new_sheet.cell(i, column=4).fill = PatternFill(start_color='00CC33', end_color='00CC33', fill_type='solid')
+
+                            new_sheet.cell(i, column=5, value=arendator_price).number_format = '#,##0.00'
+                            new_sheet.cell(i, column=5).font = Font(name='Arial', size=12, color="00000000")
+                            new_sheet.cell(i, column=5).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                            new_sheet.cell(i, column=5).alignment = Alignment(horizontal="center", vertical="center")
+                            new_sheet.cell(i, column=5).fill = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
+
+                            new_sheet.cell(i, column=6).font = Font(name='Arial', size=12, color="00000000")
+                            new_sheet.cell(i, column=6).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                            new_sheet.cell(i, column=6).alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                            new_sheet.cell(i, column=6).fill = PatternFill(start_color='00CC33', end_color='00CC33', fill_type='solid')
+
+                            AMOUNT_A = AMOUNT_A + 1
+                            break
+                            
+                        if credit_cell.value < arendator_price:
+                            bd = Side(style='thin', color="00000000")
+
+                            new_sheet.cell(i, column=3, value=debet_cell.value).number_format = '#,##0.00'
+                            new_sheet.cell(i, column=3).font = Font(name='Arial', size=12, color="00000000", bold=True)
+                            new_sheet.cell(i, column=3).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                            new_sheet.cell(i, column=3).alignment = Alignment(horizontal="center", vertical="center")
+                            new_sheet.cell(i, column=3).fill = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
+
+                            new_sheet.cell(i, column=4, value=credit_cell.value).number_format = '#,##0.00'
+                            new_sheet.cell(i, column=4).font = Font(name='Arial', size=12, color="00000000")
+                            new_sheet.cell(i, column=4).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                            new_sheet.cell(i, column=4).alignment = Alignment(horizontal="center", vertical="center")
+                            new_sheet.cell(i, column=4).fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+
+                            new_sheet.cell(i, column=5, value=arendator_price).number_format = '#,##0.00'
+                            new_sheet.cell(i, column=5).font = Font(name='Arial', size=12, color="00000000")
+                            new_sheet.cell(i, column=5).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                            new_sheet.cell(i, column=5).alignment = Alignment(horizontal="center", vertical="center")
+                            new_sheet.cell(i, column=5).fill = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
+
+                            new_sheet.cell(i, column=6).font = Font(name='Arial', size=12, color="00000000")
+                            new_sheet.cell(i, column=6).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                            new_sheet.cell(i, column=6).alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                            new_sheet.cell(i, column=6).fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+
+                        AMOUNT_A = AMOUNT_A + 1
+                        break
+            except Exception as e:
+                logging.info(f"==================== parsing_excel - Обнаружена ошибка: {e} ====================\n")                
+
+                    # note_style = "Neutral"
+                    # if debet_cell.value:
+                    #     style_bad = "Bad"
+                    #     note_style = "Bad"
+                    # else:
+                    #     style_bad = "Normal"
+                    #     if debet_cell.value == None:
+                    #         debet_cell.value = 0
+
+                    # if credit_cell.value:
+                    #     style_good = "Good"
+                    #     if credit_cell.value >= arendator_price:
+                    #         note_style = "Good"
+                    # else:
+                    #     style_good = "Normal"
+                    #     if credit_cell.value == None:
+                    #         credit_cell.value = 0
+                          
+                    # bd = Side(style='thin', color="00000000")
+                    # new_sheet.cell(i, column=3, value=debet_cell.value).style = style_bad
+                    # new_sheet.cell(i, column=3).alignment = Alignment(horizontal="center", vertical="center")
+                    # new_sheet.cell(i, column=3).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                    # new_sheet.cell(i, column=4, value=credit_cell.value).style = style_good
+                    # new_sheet.cell(i, column=4).alignment = Alignment(horizontal="center", vertical="center")
+                    # new_sheet.cell(i, column=4).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                    # new_sheet.cell(i, column=5, value=arendator_price).style = "Normal"
+                    # new_sheet.cell(i, column=5).alignment = Alignment(horizontal="center", vertical="center")
+                    # new_sheet.cell(i, column=5).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+                    # new_sheet.cell(i, column=6).style = note_style
+                    # new_sheet.cell(i, column=6).alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                    # new_sheet.cell(i, column=6).border = Border(left=bd, top=bd, right=bd, bottom=bd)
+
+                    # AMOUNT_A = AMOUNT_A + 1
+                    # break
+                      
     book_arenda.save(arenda_dir)
+    logging.info(f"==================== parsing_excel - КНИГА обработана и сохранена ====================")  
 
     """ Проверка результата обработки: поиск необработанных позиций в созданом файле,
         поиск арендаторов без договоров, поиск необработанных позиций, подсчет общей задолженности и переплаты,

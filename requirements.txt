@@ -67,7 +67,7 @@ tqdm==4.66.2
 trio==0.26.0
 trio-websocket==0.11.1
 typing_extensions==4.9.0
-ujson==5.10.0
+ujson==5.12.1
 urllib3==2.6.1
 uvicorn==0.27.1
 watchfiles==0.22.0

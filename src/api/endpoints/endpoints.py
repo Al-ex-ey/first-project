@@ -180,8 +180,10 @@ async def upload_files(files: list[UploadFile], request: Request, error_message:
 
     try:
         query_params = parsing_excel(AMOUNT_ROW_TOTAL, AMOUNT_ROW, AMOUNT_A, AMOUNT_A_TOTAL, ARENDA_AMOUNT_ROW, DEBIT_AMOUNT_ROW)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Ошибка. Проверьте, что файл существует, не поврежден, не защищен от записи и в нем есть страницы!")
+    except Exception as e:
+        logging.info(f"==================== Обнаружена ошибка: {e} ====================\n")
+    # except Exception:
+    #     raise HTTPException(status_code=404, detail="Ошибка. Проверьте, что файл существует, не поврежден, не защищен от записи и в нем есть страницы!")
 
     await save_dictionary_list_to_cache(cache_name="debtors_result", dictionary_list=query_params)
     result_table: list = query_params.get("result_table", [])
